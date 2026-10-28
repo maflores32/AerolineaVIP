@@ -1,0 +1,127 @@
+﻿@model AerolineaVIP.Models.Reserva
+@{
+    ViewBag.Title = "Web Check-in";
+    var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 15</span>
+        <h2 class="mb-0">Web Check-in y Pases de Abordar</h2>
+        <p class="text-muted mb-0">Confirme la asistencia de los pasajeros y descargue sus tarjetas de embarque VIP.</p>
+    </div>
+</div>
+
+<!-- Buscador de Reserva -->
+<div class="card p-3 shadow-sm mb-4 no-print">
+    @using (Html.BeginForm("Index", "CheckIn", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+    {
+        <div class="col-md-5">
+            <label class="form-label fw-bold">Ingrese el Código de Reserva:</label>
+            <input type="text" name="codigoReserva" value="@(Model != null ? Model.CodigoReserva : Request.QueryString["codigoReserva"])" class="form-control" placeholder="Ej. VIP-123456" required />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-vip w-100">Consultar Check-in</button>
+        </div>
+        <div class="col-md-4">
+            <small class="text-muted">Disponible para reservas con estado <strong>CONFIRMADA</strong> (pagadas).</small>
+        </div>
+    }
+</div>
+
+@if (ViewBag.ErrorCheckIn != null)
+{
+    <div class="alert alert-warning no-print">
+        <strong>Atención:</strong> @ViewBag.ErrorCheckIn
+    </div>
+}
+
+@if (TempData["MensajeCheckIn"] != null)
+{
+    <div class="alert alert-success no-print">
+        @TempData["MensajeCheckIn"]
+    </div>
+}
+
+@if (Model != null && Model.EstadoReservaCodigo == "CONFIRMADA")
+{
+    <div class="printable-area">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4>Reserva: <span class="text-primary">@Model.CodigoReserva</span></h4>
+                @if (vuelo != null)
+                {
+                    <p class="text-muted mb-0">Vuelo <strong>@vuelo.CodigoVuelo</strong> · @vuelo.CiudadOrigen (@vuelo.Origen) &rarr; @vuelo.CiudadDestino (@vuelo.Destino) · @vuelo.FechaOperacion.ToString("dd/MM/yyyy") a las @vuelo.HoraSalida.ToString(@"hh\:mm")</p>
+                }
+            </div>
+            <button onclick="window.print();" class="btn btn-outline-dark no-print">
+                Imprimir Pases de Abordar
+            </button>
+        </div>
+
+        @foreach (var asig in Model.ReservaPasajeroVueloes)
+        {
+            bool checkInListo = asig.CheckIns.Any(c => c.EstadoCheckInCodigo == "COMPLETADO");
+            var infoCheckIn = asig.CheckIns.FirstOrDefault(c => c.EstadoCheckInCodigo == "COMPLETADO");
+
+            <div class="boarding-pass">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge bg-dark mb-1">AEROLÍNEA VIP · BOARDING PASS</span>
+                        <h4 class="mb-1">@asig.Pasajero.Nombres @asig.Pasajero.Apellidos</h4>
+                        <p class="text-muted small mb-0">@asig.Pasajero.TipoDocumentoCodigo: @asig.Pasajero.NumeroDocumento · Tel: @asig.Pasajero.Telefono</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="fs-4 badge bg-danger p-2">ASIENTO #@asig.NumeroAsiento</span>
+                        <div class="small text-muted mt-1">Cabina Phenom 300E</div>
+                    </div>
+                </div>
+                <hr />
+                <div class="row text-center">
+                    <div class="col-3 border-end">
+                        <small class="text-muted d-block">ORIGEN</small>
+                        <strong class="fs-5">@(vuelo != null ? vuelo.Origen : "UIO")</strong>
+                    </div>
+                    <div class="col-3 border-end">
+                        <small class="text-muted d-block">DESTINO</small>
+                        <strong class="fs-5">@(vuelo != null ? vuelo.Destino : "GYE")</strong>
+                    </div>
+                    <div class="col-3 border-end">
+                        <small class="text-muted d-block">SALIDA</small>
+                        <strong class="fs-5">@(vuelo != null ? vuelo.HoraSalida.ToString(@"hh\:mm") : "09:00")</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-muted d-block">ESTADO</small>
+                        @if (checkInListo)
+                        {
+                            <span class="badge bg-success">CHECK-IN LISTO</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">PENDIENTE</span>
+                        }
+                    </div>
+                </div>
+
+                @if (!checkInListo)
+                {
+                    <div class="mt-3 text-end no-print">
+                        @using (Html.BeginForm("RegistrarCheckIn", "CheckIn", FormMethod.Post, new { @class = "d-inline" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="asignacionId" value="@asig.AsignacionId" />
+                            <input type="hidden" name="codigoReserva" value="@Model.CodigoReserva" />
+                            <button type="submit" class="btn btn-vip">Completar Check-in de este Pasajero</button>
+                        }
+                    </div>
+                }
+                else if (infoCheckIn != null)
+                {
+                    <div class="mt-2 text-end text-muted small">
+                        Check-in registrado el @infoCheckIn.FechaRegistro.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}

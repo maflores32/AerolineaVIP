@@ -1,0 +1,110 @@
+﻿@model IEnumerable<AerolineaVIP.Models.Reserva>
+@{
+    ViewBag.Title = "Mis Reservas";
+    var vuelosDict = ViewBag.VuelosDict as Dictionary<int, AerolineaVIP.Models.vw_VueloDetalle>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 13</span>
+        <h2 class="mb-0">Mis Reservas</h2>
+        <p class="text-muted mb-0">Consulte el estado de sus reservas activas, confirmadas o históricas.</p>
+    </div>
+    @Html.ActionLink("+ Nueva Reserva", "Buscar", "Vuelos", null, new { @class = "btn btn-vip" })
+</div>
+
+<div class="card p-3 shadow-sm mb-3">
+    @using (Html.BeginForm("MisReservas", "Reservas", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
+    {
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Filtrar por estado:</label>
+            <select name="estado" class="form-select">
+                <option value="">-- Todos los estados --</option>
+                <option value="PENDIENTE" @(ViewBag.EstadoSeleccionado == "PENDIENTE" ? "selected" : "")>PENDIENTE</option>
+                <option value="CONFIRMADA" @(ViewBag.EstadoSeleccionado == "CONFIRMADA" ? "selected" : "")>CONFIRMADA</option>
+                <option value="CANCELADA" @(ViewBag.EstadoSeleccionado == "CANCELADA" ? "selected" : "")>CANCELADA</option>
+                <option value="EXPIRADA" @(ViewBag.EstadoSeleccionado == "EXPIRADA" ? "selected" : "")>EXPIRADA</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary me-2">Filtrar</button>
+            @Html.ActionLink("Ver todas", "MisReservas", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+        </div>
+    }
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">
+        Aún no registra reservas con el criterio seleccionado. Puede crear una desde el botón <strong>+ Nueva Reserva</strong>.
+    </div>
+}
+else
+{
+    <div class="card p-3 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código</th>
+                        <th>Vuelo / Ruta</th>
+                        <th>Fecha Vuelo</th>
+                        <th>Pasajeros</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var primerTramo = item.ReservaPasajeroVueloes.FirstOrDefault();
+                        var vuelo = (primerTramo != null && vuelosDict != null && vuelosDict.ContainsKey(primerTramo.VueloId))
+                            ? vuelosDict[primerTramo.VueloId] : null;
+                        decimal total = item.ReservaPasajeroVueloes.Sum(x => x.ImporteTramo);
+
+                        string badgeColor = item.EstadoReservaCodigo == "CONFIRMADA" ? "bg-success" :
+                                            (item.EstadoReservaCodigo == "PENDIENTE" ? "bg-warning text-dark" : "bg-secondary");
+
+                        <tr>
+                            <td>
+                                <strong>@item.CodigoReserva</strong><br />
+                                <small class="text-muted">Creada: @item.FechaCreacion.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td>
+                                @if (vuelo != null)
+                                {
+                                    <strong>@vuelo.CodigoVuelo</strong><br />
+                                    <small>@vuelo.CiudadOrigen (@vuelo.Origen) &rarr; @vuelo.CiudadDestino (@vuelo.Destino)</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Sin tramos</span>
+                                }
+                            </td>
+                            <td>
+                                @if (vuelo != null)
+                                {
+                                    @vuelo.FechaOperacion.ToString("dd/MM/yyyy")<br />
+                                    <small class="text-muted">@vuelo.HoraSalida.ToString(@"hh\:mm")</small>
+                                }
+                            </td>
+                            <td>@item.ReservaPasajeroVueloes.Count pasajero(s)</td>
+                            <td><strong>@string.Format("{0:C2}", total)</strong></td>
+                            <td><span class="badge @badgeColor">@item.EstadoReservaCodigo</span></td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    @Html.ActionLink("Gestionar", "Gestionar", "Reservas", new { id = item.ReservaId }, new { @class = "btn btn-outline-primary btn-sm" })
+                                    @if (item.EstadoReservaCodigo == "PENDIENTE")
+                                    {
+                                        @Html.ActionLink("Pagar", "Pagar", "Compras", new { reservaId = item.ReservaId }, new { @class = "btn btn-vip btn-sm" })
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

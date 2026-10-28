@@ -1,0 +1,66 @@
+﻿@model IEnumerable<AerolineaVIP.Models.Aeronave>
+@{
+    ViewBag.Title = "Gestión de Flota";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 19</span>
+        <h2 class="mb-0">Gestión de la Flota de Aeronaves</h2>
+        <p class="text-muted mb-0">Flota corporativa Embraer Phenom 300E (Capacidad: 7 asientos por aeronave).</p>
+    </div>
+    @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@if (TempData["MensajeAdmin"] != null)
+{
+    <div class="alert alert-success">@TempData["MensajeAdmin"]</div>
+}
+@if (TempData["ErrorAdmin"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorAdmin"]</div>
+}
+
+<div class="card p-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Aeronave ID</th>
+                    <th>Matrícula</th>
+                    <th>Modelo</th>
+                    <th>Fabricante</th>
+                    <th>Capacidad</th>
+                    <th>Estado Operativo</th>
+                    <th class="text-center">Cambiar Operatividad</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    string badgeColor = item.EstadoAeronaveCodigo == "DISPONIBLE" ? "bg-success" : "bg-danger";
+                    <tr>
+                        <td>#@item.AeronaveId</td>
+                        <td><strong class="fs-5 text-primary">@item.Matricula</strong></td>
+                        <td>@item.ModeloAeronave.Nombre</td>
+                        <td>@item.ModeloAeronave.Fabricante</td>
+                        <td><span class="badge bg-dark">@item.ModeloAeronave.CapacidadAsientos asientos</span></td>
+                        <td><span class="badge @badgeColor">@item.EstadoAeronaveCodigo</span></td>
+                        <td class="text-center">
+                            @using (Html.BeginForm("CambiarEstadoAeronave", "Admin", FormMethod.Post, new { @class = "d-inline-flex gap-1" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="aeronaveId" value="@item.AeronaveId" />
+                                <select name="nuevoEstado" class="form-select form-select-sm" style="width:160px;">
+                                    <option value="DISPONIBLE" @(item.EstadoAeronaveCodigo == "DISPONIBLE" ? "selected" : "")>DISPONIBLE</option>
+                                    <option value="NO_DISPONIBLE" @(item.EstadoAeronaveCodigo == "NO_DISPONIBLE" ? "selected" : "")>NO_DISPONIBLE</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-dark">Guardar</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

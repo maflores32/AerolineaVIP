@@ -1,0 +1,48 @@
+﻿@model AerolineaVIP.Models.Aeronave
+
+@{
+    ViewBag.Title = "Editar Aeronave";
+}
+
+<h2>Editar Aeronave</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <h4>Aeronave: @Model.Matricula</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.AeronaveId)
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(model => model.Matricula, "Matrícula", htmlAttributes: new { @class = "control-label col-md-2 fw-bold" })
+            <div class="col-md-6">
+                @Html.EditorFor(model => model.Matricula, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Matricula, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(model => model.ModeloAeronaveId, "Modelo", htmlAttributes: new { @class = "control-label col-md-2 fw-bold" })
+            <div class="col-md-6">
+                @Html.DropDownList("ModeloAeronaveId", null, htmlAttributes: new { @class = "form-select" })
+                @Html.ValidationMessageFor(model => model.ModeloAeronaveId, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(model => model.EstadoAeronaveCodigo, "Estado", htmlAttributes: new { @class = "control-label col-md-2 fw-bold" })
+            <div class="col-md-6">
+                @Html.DropDownList("EstadoAeronaveCodigo", null, htmlAttributes: new { @class = "form-select" })
+                @Html.ValidationMessageFor(model => model.EstadoAeronaveCodigo, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group mt-3">
+            <input type="submit" value="Guardar Cambios" class="btn btn-primary" />
+            @Html.ActionLink("Volver a la lista", "Index", null, new { @class = "btn btn-outline-secondary" })
+        </div>
+    </div>
+}

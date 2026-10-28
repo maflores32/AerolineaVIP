@@ -1,0 +1,36 @@
+﻿@model AerolineaVIP.Models.Aeronave
+
+@{
+    ViewBag.Title = "Detalles de Aeronave";
+}
+
+<h2>Detalles de Aeronave</h2>
+
+<div class="card p-4 shadow-sm" style="max-width: 600px;">
+    <h4>Aeronave: @Model.Matricula</h4>
+    <hr />
+    <dl class="row mb-0">
+        <dt class="col-sm-4">Matrícula:</dt>
+        <dd class="col-sm-8"><strong>@Html.DisplayFor(model => model.Matricula)</strong></dd>
+
+        <dt class="col-sm-4">Modelo:</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.ModeloAeronave.Nombre)</dd>
+
+        <dt class="col-sm-4">Fabricante:</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.ModeloAeronave.Fabricante)</dd>
+
+        <dt class="col-sm-4">Capacidad:</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.ModeloAeronave.CapacidadAsientos) asientos</dd>
+
+        <dt class="col-sm-4">Estado:</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.EstadoAeronave.Descripcion)</dd>
+    </dl>
+    <hr />
+    <div>
+        @if (User.IsInRole("Edit"))
+        {
+            @Html.ActionLink("Editar", "Edit", new { id = Model.AeronaveId }, new { @class = "btn btn-primary btn-sm" })
+        }
+        @Html.ActionLink("Volver a la lista", "Index", null, new { @class = "btn btn-outline-secondary btn-sm" })
+    </div>
+</div>

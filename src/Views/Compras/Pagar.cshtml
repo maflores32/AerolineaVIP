@@ -1,0 +1,163 @@
+﻿@model AerolineaVIP.Models.Reserva
+@{
+    ViewBag.Title = "Pago Simulado";
+    var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+    var marcas = ViewBag.Marcas as List<AerolineaVIP.Models.MarcaTarjeta> ?? new List<AerolineaVIP.Models.MarcaTarjeta>();
+    var metodos = ViewBag.Metodos as List<AerolineaVIP.Models.MetodoPago> ?? new List<AerolineaVIP.Models.MetodoPago>();
+    decimal total = Model.ReservaPasajeroVueloes.Sum(x => x.ImporteTramo);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 11</span>
+        <h2 class="mb-0">Pago Simulado — Reserva @Model.CodigoReserva</h2>
+        <p class="text-muted mb-0">Entorno de demostración académica. No ingrese datos reales de tarjetas financieras.</p>
+    </div>
+    @Html.ActionLink("← Volver a la reserva", "Confirmar", "Reservas", new { id = Model.ReservaId }, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@if (TempData["ErrorPago"] != null)
+{
+    <div class="alert alert-danger">
+        <strong>Atención:</strong> @TempData["ErrorPago"]
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Resumen de compra -->
+    <div class="col-md-5">
+        <div class="card p-3 shadow-sm mb-3">
+            <h4>Resumen de la Operación</h4>
+            <hr />
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Código Reserva:</dt>
+                <dd class="col-sm-7"><strong>@Model.CodigoReserva</strong></dd>
+
+                @if (vuelo != null)
+                {
+                    <dt class="col-sm-5">Vuelo:</dt>
+                    <dd class="col-sm-7"><strong>@vuelo.CodigoVuelo</strong></dd>
+
+                    <dt class="col-sm-5">Ruta:</dt>
+                    <dd class="col-sm-7">@vuelo.CiudadOrigen &rarr; @vuelo.CiudadDestino</dd>
+
+                    <dt class="col-sm-5">Fecha / Salida:</dt>
+                    <dd class="col-sm-7">@vuelo.FechaOperacion.ToString("dd/MM/yyyy") @vuelo.HoraSalida.ToString(@"hh\:mm")</dd>
+                }
+
+                <dt class="col-sm-5">Pasajeros:</dt>
+                <dd class="col-sm-7">@Model.ReservaPasajeroVueloes.Count asiento(s)</dd>
+            </dl>
+            <hr />
+            <div class="d-flex justify-content-between fs-4">
+                <strong>Total a Pagar:</strong>
+                <strong class="text-success">@string.Format("{0:C2}", total)</strong>
+            </div>
+        </div>
+
+        <div class="card p-3 shadow-sm alert alert-warning mb-0">
+            <h6 class="fw-bold mb-1">Aviso Académico (DP-03)</h6>
+            <p class="small mb-0">
+                Esta es una pasarela de prueba que simula la autorización bancaria en el servidor. Solo se almacenan la marca y los últimos 4 dígitos ficticios.
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulario de tarjeta simulada -->
+    <div class="col-md-7">
+        <div class="card p-4 shadow-sm">
+            <h4 class="mb-3">Información de la Tarjeta (Simulación)</h4>
+            <hr />
+
+            @using (Html.BeginForm("ProcesarPago", "Compras", FormMethod.Post, new { id = "formPago" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="reservaId" value="@Model.ReservaId" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tipo de tarjeta *</label>
+                        <select name="metodoPagoCodigo" class="form-select" required>
+                            @foreach (var m in metodos)
+                            {
+                                <option value="@m.Codigo">@m.Nombre</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Marca de tarjeta *</label>
+                        <select name="marcaTarjetaCodigo" class="form-select" required>
+                            @foreach (var mc in marcas)
+                            {
+                                <option value="@mc.Codigo">@mc.Nombre</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Nombre del titular (como aparece en la tarjeta) *</label>
+                        <input type="text" name="nombreTitular" class="form-control" required maxlength="80" value="CLIENTE VIP EJEMPLO" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Número de tarjeta ficticio *</label>
+                        <input type="text" name="numeroTarjeta" class="form-control" required maxlength="19" value="4532 0150 9982 1234" placeholder="4532 0000 0000 0000" />
+                        <small class="text-muted">Puede usar cualquier número ficticio para la demostración.</small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Mes exp. *</label>
+                        <select name="mesExpiracion" class="form-select">
+                            @for (int m = 1; m <= 12; m++)
+                            {
+                                <option value="@m.ToString("D2")" @(m == 12 ? "selected" : "")>@m.ToString("D2")</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Año exp. *</label>
+                        <select name="anioExpiracion" class="form-select">
+                            <option value="2026">2026</option>
+                            <option value="2027" selected>2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">CVV *</label>
+                        <input type="password" name="cvv" class="form-control" maxlength="4" value="123" required />
+                    </div>
+
+                    <div class="col-12 mt-4 d-grid">
+                        <button type="button" class="btn btn-vip btn-lg" data-bs-toggle="modal" data-bs-target="#modalConfirmarPago">
+                            Pagar @string.Format("{0:C2}", total) &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal de confirmación según Wireframe 11 -->
+                <div class="modal fade" id="modalConfirmarPago" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-dark text-white">
+                                <h5 class="modal-title" id="modalLabel">Confirmar Operación de Pago</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>¿Desea autorizar el pago simulado por el valor total de <strong>@string.Format("{0:C2}", total)</strong> para la reserva <strong>@Model.CodigoReserva</strong>?</p>
+                                <p class="text-muted small mb-0">Al confirmar, los asientos quedarán confirmados y se emitirá el comprobante de compra académico.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-vip">Autorizar Pago Simulado</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

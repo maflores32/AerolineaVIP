@@ -1,0 +1,60 @@
+﻿@using AerolineaVIP.Models
+@model LoginViewModel
+@{
+    ViewBag.Title = "Iniciar sesión";
+}
+
+<main aria-labelledby="title">
+    <h2 id="title">@ViewBag.Title</h2>
+    <div class="row">
+        <div class="col-md-7">
+            <section id="loginForm" class="card-aerolinea">
+                @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <h4>Ingrese con su nombre de usuario y contraseña</h4>
+                    <hr />
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    <div class="row mb-3">
+                        @Html.LabelFor(m => m.UserName, new { @class = "col-md-4 col-form-label" })
+                        <div class="col-md-8">
+                            @Html.TextBoxFor(m => m.UserName, new { @class = "form-control", placeholder = "Ej. repinos1" })
+                            @Html.ValidationMessageFor(m => m.UserName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        @Html.LabelFor(m => m.Password, new { @class = "col-md-4 col-form-label" })
+                        <div class="col-md-8">
+                            @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="offset-md-4 col-md-8">
+                            <div class="checkbox">
+                                @Html.CheckBoxFor(m => m.RememberMe)
+                                @Html.LabelFor(m => m.RememberMe)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="offset-md-4 col-md-8">
+                            <input type="submit" value="Iniciar sesión" class="btn btn-gold" />
+                        </div>
+                    </div>
+                    <hr />
+                    <p class="mb-1">
+                        @Html.ActionLink("¿Olvidó su contraseña?", "ForgotPassword", "Account")
+                    </p>
+                    <p class="mb-0">
+                        ¿No tiene cuenta? @Html.ActionLink("Regístrese aquí", "Register", "Account")
+                    </p>
+                }
+            </section>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

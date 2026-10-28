@@ -1,0 +1,123 @@
+﻿@model IEnumerable<AerolineaVIP.Models.vw_VueloDetalle>
+@{
+    ViewBag.Title = "Resultados de vuelos";
+    var dispDict = ViewBag.DisponibilidadDict as Dictionary<int, AerolineaVIP.Models.vw_DisponibilidadVuelo>;
+    int numPasajeros = ViewBag.Pasajeros != null ? (int)ViewBag.Pasajeros : 1;
+}
+
+<div class="vip-buscador mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-dark mb-1">PANTALLA 06</span>
+            <h3 class="mb-0">Resultados de Búsqueda de Vuelos</h3>
+        </div>
+        @Html.ActionLink("Nueva búsqueda", "Buscar", "Vuelos", null, new { @class = "btn btn-outline-secondary btn-sm" })
+    </div>
+    <hr />
+
+    @using (Html.BeginForm("Resultados", "Vuelos", FormMethod.Get))
+    {
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Origen:</label>
+                @Html.DropDownList("origen", null, "-- Todos --", new { @class = "form-select" })
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Destino:</label>
+                @Html.DropDownList("destino", null, "-- Todos --", new { @class = "form-select" })
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Fecha:</label>
+                <input type="date" name="fecha" value="@ViewBag.fecha" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Pasajeros (1-7):</label>
+                <input type="number" name="pasajeros" value="@numPasajeros" min="1" max="7" class="form-control" />
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-vip flex-fill">Filtrar</button>
+                @Html.ActionLink("Limpiar", "Resultados", "Vuelos", null, new { @class = "btn btn-secondary" })
+            </div>
+        </div>
+    }
+</div>
+
+@if (ViewBag.ErrorBusqueda != null)
+{
+    <div class="alert alert-danger">
+        <strong>Atención:</strong> @ViewBag.ErrorBusqueda
+    </div>
+}
+else if (!Model.Any())
+{
+    <div class="alert alert-warning">
+        No se encontraron vuelos con los filtros seleccionados o con al menos <strong>@numPasajeros</strong> asiento(s) disponible(s).
+    </div>
+}
+else
+{
+    <div class="card p-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">Se encontraron <strong>@Model.Count()</strong> vuelo(s) disponible(s) para <strong>@numPasajeros</strong> pasajero(s).</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Vuelo</th>
+                        <th>Ruta</th>
+                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Disponibilidad (7 asientos)</th>
+                        <th>Tarifa Ref.</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var disp = (dispDict != null && dispDict.ContainsKey(item.VueloId)) ? dispDict[item.VueloId] : null;
+                        int libres = disp != null && disp.Disponibles.HasValue ? disp.Disponibles.Value : 7;
+                        int ocupados = disp != null ? disp.Ocupados : 0;
+
+                        <tr>
+                            <td>
+                                <strong class="text-primary">@item.CodigoVuelo</strong><br />
+                                <small class="text-muted">Estado: @item.EstadoVueloCodigo</small>
+                            </td>
+                            <td>
+                                <strong>@item.CiudadOrigen</strong> (@item.Origen)
+                                &rarr;
+                                <strong>@item.CiudadDestino</strong> (@item.Destino)
+                            </td>
+                            <td>
+                                @item.FechaOperacion.ToString("dd/MM/yyyy")
+                            </td>
+                            <td>
+                                <strong>@item.HoraSalida.ToString(@"hh\:mm")</strong> - @item.HoraLlegada.ToString(@"hh\:mm")
+                            </td>
+                            <td>
+                                <span class="badge bg-success">@libres libres</span>
+                                <span class="badge bg-secondary">@ocupados ocupados</span>
+                                @if (disp != null && !string.IsNullOrEmpty(disp.Matricula))
+                                {
+                                    <br /><small class="text-muted">Avión: @disp.Matricula</small>
+                                }
+                            </td>
+                            <td>
+                                <strong class="fs-6">@string.Format("{0:C2}", item.TarifaReferencial)</strong>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    @Html.ActionLink("Ver asientos", "Disponibilidad", "Vuelos", new { id = item.VueloId, pasajeros = numPasajeros }, new { @class = "btn btn-outline-primary btn-sm" })
+                                    @Html.ActionLink("Reservar", "SeleccionAsiento", "Reservas", new { vueloId = item.VueloId, pasajeros = numPasajeros }, new { @class = "btn btn-vip btn-sm" })
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

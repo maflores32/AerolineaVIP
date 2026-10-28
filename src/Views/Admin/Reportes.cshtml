@@ -1,0 +1,73 @@
+﻿@model IEnumerable<AerolineaVIP.Controllers.ReporteVueloViewModel>
+@{
+    ViewBag.Title = "Reportes Operativos";
+    decimal totalIngresos = Model.Sum(x => x.IngresosEstimados);
+    int totalAsientosOcupados = Model.Sum(x => x.Ocupados);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 21</span>
+        <h2 class="mb-0">Reporte de Ocupación y Ventas por Vuelo</h2>
+        <p class="text-muted mb-0">Métricas reales calculadas a partir de la cabina de 7 asientos (Embraer Phenom 300E).</p>
+    </div>
+    @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3 shadow-sm border-start border-4 border-success">
+            <h6 class="text-muted mb-1">Ingresos Estimados (Vuelos Listados)</h6>
+            <h3 class="text-success mb-0">@string.Format("{0:C2}", totalIngresos)</h3>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3 shadow-sm border-start border-4 border-primary">
+            <h6 class="text-muted mb-1">Asientos Comercializados</h6>
+            <h3 class="text-primary mb-0">@totalAsientosOcupados pasajeros</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Vuelo</th>
+                    <th>Fecha</th>
+                    <th>Ruta</th>
+                    <th>Aeronave</th>
+                    <th>Ocupación (Cap. 7)</th>
+                    <th>% Ocupación</th>
+                    <th class="text-end">Tarifa</th>
+                    <th class="text-end">Total Ingresos</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong class="text-primary">@item.CodigoVuelo</strong></td>
+                        <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
+                        <td>@item.Ruta</td>
+                        <td><span class="badge bg-dark">@item.Aeronave</span></td>
+                        <td>
+                            <span class="badge bg-danger">@item.Ocupados ocupados</span>
+                            <span class="badge bg-success">@item.Disponibles libres</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 18px;">
+                                <div class="progress-bar @(item.PorcentajeOcupacion >= 50 ? "bg-success" : "bg-warning text-dark")" role="progressbar" style="width: @item.PorcentajeOcupacion%;" aria-valuenow="@item.PorcentajeOcupacion" aria-valuemin="0" aria-valuemax="100">
+                                    @item.PorcentajeOcupacion%
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-end">@string.Format("{0:C2}", item.TarifaReferencial)</td>
+                        <td class="text-end"><strong class="text-success">@string.Format("{0:C2}", item.IngresosEstimados)</strong></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

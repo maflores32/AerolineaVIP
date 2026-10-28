@@ -1,0 +1,56 @@
+﻿@{
+    ViewBag.Title = "Panel de Administración";
+}
+
+<div class="mb-4">
+    <span class="badge bg-dark mb-1">PANTALLA 17</span>
+    <h2 class="mb-1">Panel de Administración Operativa</h2>
+    <p class="text-muted mb-0">Seleccione el módulo que desea gestionar dentro del sistema de la aerolínea.</p>
+</div>
+
+@if (TempData["MensajeAdmin"] != null)
+{
+    <div class="alert alert-success">@TempData["MensajeAdmin"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-top border-4 border-primary p-3">
+            <h5 class="card-title text-primary">Programación de Vuelos</h5>
+            <p class="card-text text-muted small">Generación masiva con Store Procedure (usp_GenerarVuelos), confirmación y cancelación operativa.</p>
+            <div class="mt-auto">
+                @Html.ActionLink("Gestionar Vuelos (P18) →", "Vuelos", "Admin", null, new { @class = "btn btn-outline-primary w-100" })
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-top border-4 border-warning p-3">
+            <h5 class="card-title text-warning">Flota de Aeronaves</h5>
+            <p class="card-text text-muted small">Control de la flota ejecutiva Embraer Phenom 300E (AV-01, AV-02, AV-03) y estados de operatividad.</p>
+            <div class="mt-auto">
+                @Html.ActionLink("Gestionar Flota (P19) →", "Aeronaves", "Admin", null, new { @class = "btn btn-outline-warning text-dark w-100" })
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-top border-4 border-success p-3">
+            <h5 class="card-title text-success">Usuarios, pasajeros y reservas</h5>
+            <p class="card-text text-muted small">Mantenimiento de Aeropuertos (UIO, GYE, CUE, MEC, GPS), Rutas corporativas, Frecuencias y Pasajeros.</p>
+            <div class="mt-auto">
+                @Html.ActionLink("Gestionar (P20) →", "Gestion", "Admin", null, new { @class = "btn btn-outline-success w-100" })
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-top border-4 border-info p-3">
+            <h5 class="card-title text-info">Reportes Operativos</h5>
+            <p class="card-text text-muted small">Ocupación real de la cabina de 7 asientos, porcentajes de carga por ruta e ingresos totales generados.</p>
+            <div class="mt-auto">
+                @Html.ActionLink("Ver Reportes (P21) →", "Reportes", "Admin", null, new { @class = "btn btn-outline-info text-dark w-100" })
+            </div>
+        </div>
+    </div>
+</div>

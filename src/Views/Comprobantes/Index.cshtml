@@ -1,0 +1,74 @@
+﻿@model IEnumerable<AerolineaVIP.Models.vw_ComprobanteDetalle>
+@{
+    ViewBag.Title = "Comprobantes Académicos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 16</span>
+        <h2 class="mb-0">Comprobantes de Pago y Facturación Académica</h2>
+        <p class="text-muted mb-0">Consulte y descargue sus comprobantes autorizados en formato para impresión o PDF.</p>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm mb-4">
+    @using (Html.BeginForm("Index", "Comprobantes", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+    {
+        <div class="col-md-5">
+            <label class="form-label fw-bold">Buscar por Código de Reserva:</label>
+            <input type="text" name="codigoReserva" value="@ViewBag.CodigoBuscado" class="form-control" placeholder="Ej. VIP-123456" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary">Buscar Comprobantes</button>
+            @Html.ActionLink("Ver todos", "Index", "Comprobantes", null, new { @class = "btn btn-outline-secondary" })
+        </div>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No se encontraron comprobantes emitidos con los criterios especificados.
+    </div>
+}
+else
+{
+    <div class="card p-3 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>N° Comprobante</th>
+                        <th>Tipo</th>
+                        <th>Reserva</th>
+                        <th>Fecha Emisión</th>
+                        <th>Operación Pago</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><strong>@item.NumeroComprobante</strong></td>
+                            <td><span class="badge bg-secondary">@item.TipoComprobante</span></td>
+                            <td><strong class="text-primary">@item.CodigoReserva</strong></td>
+                            <td>@item.FechaEmision.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <small>@item.MarcaTarjeta **** @item.TarjetaEnmascarada</small><br />
+                                <small class="text-muted">Op: @item.CodigoOperacion</small>
+                            </td>
+                            <td><strong class="text-success fs-6">@string.Format("{0:C2}", item.TotalOperacion)</strong></td>
+                            <td><span class="badge bg-success">@item.EstadoComprobanteCodigo</span></td>
+                            <td class="text-center">
+                                @Html.ActionLink("Ver / Imprimir PDF", "Imprimir", "Comprobantes", new { id = item.ComprobanteId }, new { @class = "btn btn-sm btn-outline-dark" })
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

@@ -1,0 +1,94 @@
+﻿@model AerolineaVIP.Models.Reserva
+@{
+    ViewBag.Title = "Confirmación de Reserva";
+    var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+    decimal totalReserva = Model.ReservaPasajeroVueloes.Sum(x => x.ImporteTramo);
+}
+
+<div class="card p-4 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-dark mb-1">PANTALLA 10</span>
+            <h2 class="mb-1">Reserva Registrada — Código <span class="text-primary">@Model.CodigoReserva</span></h2>
+            <p class="text-muted mb-0">Sus asientos han quedado retenidos en estado <strong>@Model.EstadoReservaCodigo</strong> (color morado en cabina).</p>
+        </div>
+        <span class="badge p-2 fs-6" style="background-color:#6f42c1;">@Model.EstadoReservaCodigo</span>
+    </div>
+    <hr />
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <h5>Datos de la Reserva</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Código de Reserva:</dt>
+                <dd class="col-sm-7"><strong>@Model.CodigoReserva</strong></dd>
+
+                <dt class="col-sm-5">Fecha de creación:</dt>
+                <dd class="col-sm-7">@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                <dt class="col-sm-5">Vence (retención):</dt>
+                <dd class="col-sm-7">@(Model.FechaExpiracion.HasValue ? Model.FechaExpiracion.Value.ToString("dd/MM/yyyy HH:mm") : "24 horas")</dd>
+            </dl>
+        </div>
+
+        @if (vuelo != null)
+        {
+            <div class="col-md-6">
+                <h5>Datos del Vuelo</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Vuelo:</dt>
+                    <dd class="col-sm-8"><strong>@vuelo.CodigoVuelo</strong></dd>
+
+                    <dt class="col-sm-4">Ruta:</dt>
+                    <dd class="col-sm-8">@vuelo.CiudadOrigen (@vuelo.Origen) &rarr; @vuelo.CiudadDestino (@vuelo.Destino)</dd>
+
+                    <dt class="col-sm-4">Fecha y Hora:</dt>
+                    <dd class="col-sm-8">@vuelo.FechaOperacion.ToString("dd/MM/yyyy") · @vuelo.HoraSalida.ToString(@"hh\:mm")</dd>
+                </dl>
+            </div>
+        }
+    </div>
+
+    <hr />
+    <h5>Pasajeros y Asientos Asignados</h5>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Pasajero</th>
+                    <th>Documento</th>
+                    <th>Asiento #</th>
+                    <th>Estado Asiento</th>
+                    <th class="text-end">Importe</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ReservaPasajeroVueloes)
+                {
+                    <tr>
+                        <td><strong>@item.Pasajero.Nombres @item.Pasajero.Apellidos</strong></td>
+                        <td>@item.Pasajero.TipoDocumentoCodigo: @item.Pasajero.NumeroDocumento</td>
+                        <td><span class="badge bg-dark">Asiento #@item.NumeroAsiento</span></td>
+                        <td><span class="badge" style="background-color:#6f42c1;">@item.EstadoAsignacionCodigo</span></td>
+                        <td class="text-end">@string.Format("{0:C2}", item.ImporteTramo)</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="4" class="text-end">Total a Pagar:</th>
+                    <th class="text-end fs-5 text-success">@string.Format("{0:C2}", totalReserva)</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        @Html.ActionLink("Ir a Mis Reservas", "MisReservas", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+
+        @if (Model.EstadoReservaCodigo == "PENDIENTE")
+        {
+            @Html.ActionLink("Proceder al Pago Simulado (Compra) →", "Pagar", "Compras", new { reservaId = Model.ReservaId }, new { @class = "btn btn-vip btn-lg" })
+        }
+    </div>
+</div>
