@@ -3,6 +3,10 @@
 @{
     ViewBag.Title = "Gestión de Usuarios, Pasajeros y Reservas";
 }
+                else if (Model.TabActivo == "usuarios" && Model.Cuentas != null)
+                {
+                    <tr><td colspan="@(Model.EsSuperUsuario ? 5 : 4)" class="text-center text-muted py-4">No se encontraron cuentas.</td></tr>
+                }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
@@ -24,9 +28,149 @@
     <li class="nav-item">
         <a class="nav-link @(Model.TabActivo == "reservas" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "reservas" })">Reservas</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActivo == "rutas" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "rutas" })">Rutas y frecuencias</a>
+    </li>
 </ul>
 
+@if (TempData["ErrorAdmin"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorAdmin"]</div>
+}
+@if (TempData["MensajeAdmin"] != null)
+{
+    <div class="alert alert-success">@TempData["MensajeAdmin"]</div>
+}
+
+@if (Model.TabActivo == "rutas")
+{
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="card p-3 h-100">
+                <h5>1. Crear ruta</h5>
+                @using (Html.BeginForm("CrearRuta", "Admin", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label">Aeropuerto de origen</label>
+                        @Html.DropDownList("AeropuertoOrigenId", (SelectList)ViewBag.Aeropuertos, "Seleccione...", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Aeropuerto de destino</label>
+                        @Html.DropDownList("AeropuertoDestinoId", (SelectList)ViewBag.Aeropuertos, "Seleccione...", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tarifa referencial (USD)</label>
+                        <input type="number" name="TarifaReferencial" min="0.01" max="10000" step="0.01" class="form-control" required />
+                    </div>
+                    <button class="btn btn-primary" type="submit">Crear ruta</button>
+                }
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card p-3 h-100">
+                <h5>2. Añadir frecuencia</h5>
+                @using (Html.BeginForm("CrearFrecuencia", "Admin", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label">Ruta activa</label>
+                        @Html.DropDownList("RutaId", (IEnumerable<System.Web.Mvc.SelectListItem>)ViewBag.RutasActivas, "Seleccione...", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Día de operación</label>
+                        <select name="DiaSemana" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option value="1">Lunes</option><option value="2">Martes</option>
+                            <option value="3">Miércoles</option><option value="4">Jueves</option>
+                            <option value="5">Viernes</option><option value="6">Sábado</option><option value="7">Domingo</option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Salida</label>
+                            <input type="time" name="HoraSalida" class="form-control" required />
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Llegada</label>
+                            <input type="time" name="HoraLlegada" class="form-control" required />
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Guardar frecuencia</button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-4">
+        <h5>Rutas existentes</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>Origen</th><th>Destino</th><th>Tarifa USD</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                    @foreach (var ruta in Model.Rutas)
+                    {
+                        <tr>
+                            <td>@ruta.Aeropuerto.CodigoIATA · @ruta.Aeropuerto.Localidad</td>
+                            <td>@ruta.Aeropuerto1.CodigoIATA · @ruta.Aeropuerto1.Localidad</td>
+                            <td>
+                                @using (Html.BeginForm("ActualizarTarifaRuta", "Admin", FormMethod.Post, new { @class = "d-flex gap-1" }))
+                                {
+                                    @Html.AntiForgeryToken()<input type="hidden" name="rutaId" value="@ruta.RutaId" />
+                                    <input type="number" name="tarifaReferencial" value="@ruta.TarifaReferencial" min="0.01" max="10000" step="0.01" class="form-control form-control-sm" />
+                                    <button class="btn btn-sm btn-outline-primary" type="submit">Guardar</button>
+                                }
+                            </td>
+                            <td>@(ruta.Activa ? "Activa" : "Inactiva")</td>
+                            <td>
+                                @using (Html.BeginForm("CambiarEstadoRuta", "Admin", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()<input type="hidden" name="rutaId" value="@ruta.RutaId" />
+                                    <input type="hidden" name="activa" value="@(!ruta.Activa)" />
+                                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(ruta.Activa ? "Desactivar" : "Activar")</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <h5>Frecuencias existentes</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>Ruta</th><th>Día</th><th>Salida</th><th>Llegada</th><th>Estado</th><th>Acción</th></tr></thead>
+                <tbody>
+                    @foreach (var frecuencia in Model.Frecuencias)
+                    {
+                        <tr>
+                            <td>@frecuencia.Ruta.Aeropuerto.CodigoIATA → @frecuencia.Ruta.Aeropuerto1.CodigoIATA</td>
+                            <td>@frecuencia.DiaSemana</td>
+                            <td>@frecuencia.HoraSalida.ToString(@"hh\:mm")</td>
+                            <td>@frecuencia.HoraLlegada.ToString(@"hh\:mm")</td>
+                            <td>@(frecuencia.Activa ? "Activa" : "Inactiva")</td>
+                            <td>
+                                @using (Html.BeginForm("CambiarEstadoFrecuencia", "Admin", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()<input type="hidden" name="frecuenciaId" value="@frecuencia.FrecuenciaId" />
+                                    <input type="hidden" name="activa" value="@(!frecuencia.Activa)" />
+                                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(frecuencia.Activa ? "Desactivar" : "Activar")</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <p class="small text-muted mb-0">Después de crear o activar rutas y frecuencias, genere los vuelos desde Programación de Vuelos.</p>
+    </div>
+}
+
 <!-- Barra de Filtros y Búsqueda (Según Wireframe) -->
+@if (Model.TabActivo != "rutas")
+{
 <div class="card p-3 shadow-sm mb-3">
     @using (Html.BeginForm("Gestion", "Admin", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
     {
@@ -36,22 +180,8 @@
             <label class="form-label text-muted small mb-1">Buscar (opcional)</label>
             <input type="text" name="buscar" class="form-control" placeholder="usuario, correo..." value="@Model.Buscar" />
         </div>
-
-        <div class="col-md-3">
-            <label class="form-label text-muted small mb-1">Rol (opcional)</label>
-            <select class="form-select">
-                <option value="">Todos</option>
-                <option value="SuperUsuario">SuperUsuario</option>
-                <option value="Administrador">Administrador</option>
-                <option value="Cliente">Cliente</option>
-            </select>
-        </div>
-
-        <div class="col-md-2">
+        <div class="col-md-4">
             <button type="submit" class="btn btn-dark w-100">Consultar</button>
-        </div>
-        <div class="col-md-2">
-            <button type="button" class="btn btn-outline-dark w-100">Crear</button>
         </div>
     }
 </div>
@@ -65,10 +195,10 @@
                     @if (Model.TabActivo == "usuarios")
                     {
                         <th>Usuario</th>
-                        <th>Documento / Correo</th>
+                        <th>Correo</th>
                         <th>Rol</th>
                         <th>Estado</th>
-                        <th>Acciones</th>
+                        @if (Model.EsSuperUsuario) { <th>Asignar rol</th> }
                     }
                     else if (Model.TabActivo == "pasajeros")
                     {
@@ -89,22 +219,33 @@
                 </tr>
             </thead>
             <tbody>
-                @if (Model.TabActivo == "usuarios" && Model.Usuarios != null && Model.Usuarios.Any())
+                @if (Model.TabActivo == "usuarios" && Model.Cuentas != null && Model.Cuentas.Any())
                 {
-                    foreach (var user in Model.Usuarios)
+                    foreach (var user in Model.Cuentas)
                     {
                         <tr>
-                            <td><strong>@user.Nombres @user.Apellidos</strong></td>
-                            <td>@user.NumeroDocumento</td>
-                            <td><span class="badge bg-info text-dark">Cliente</span></td>
-                            <td><span class="badge bg-success">Activo</span></td>
-                            <td>
-                                <a href="#" class="text-decoration-none">Detalles</a> |
-                                <a href="#" class="text-decoration-none">Editar</a> |
-                                <a href="#" class="text-decoration-none text-primary">Asignar rol</a>
-                            </td>
+                            <td><strong>@user.Nombre</strong></td>
+                            <td>@user.Correo</td>
+                            <td>@user.Rol</td>
+                            <td><span class="badge @(user.Activo ? "bg-success" : "bg-secondary")">@(user.Activo ? "Activa" : "Bloqueada")</span></td>
+                            @if (Model.EsSuperUsuario)
+                            {
+                                <td>
+                                    @using (Html.BeginForm("CambiarRol", "Admin", FormMethod.Post, new { @class = "d-flex gap-1" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="usuarioId" value="@user.Id" />
+                                        @Html.DropDownList("rol", (SelectList)ViewBag.RolesDisponibles, user.Rol, new { @class = "form-select form-select-sm", required = "required" })
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
+                }
+                else if (Model.TabActivo == "usuarios" && Model.Cuentas != null)
+                {
+                    <tr><td colspan="@(Model.EsSuperUsuario ? 5 : 4)" class="text-center text-muted py-4">No se encontraron cuentas.</td></tr>
                 }
                 else if (Model.TabActivo == "pasajeros" && Model.Pasajeros != null && Model.Pasajeros.Any())
                 {
@@ -116,8 +257,7 @@
                             <td>@p.NumeroDocumento</td>
                             <td>@p.Telefono</td>
                             <td>
-                                <a href="#" class="text-decoration-none">Editar</a> |
-                                <a href="#" class="text-decoration-none">Historial</a>
+                                @Html.ActionLink("Ver reservas / check-in", "Index", "CheckIn", new { pasajero = p.NumeroDocumento }, new { @class = "text-decoration-none" })
                             </td>
                         </tr>
                     }
@@ -132,7 +272,7 @@
                             <td><span class="badge bg-warning text-dark">@r.EstadoReservaCodigo</span></td>
                             <td><span class="badge bg-secondary">Sin compra</span></td>
                             <td>
-                                <a href="#" class="text-decoration-none">Ver detalle</a>
+                                @Html.ActionLink("Gestionar", "Gestionar", "Reservas", new { id = r.ReservaId }, new { @class = "text-decoration-none" })
                             </td>
                         </tr>
                     }
@@ -148,10 +288,4 @@
     </div>
 </div>
 
-<!-- Mensaje de advertencia de roles (Según Wireframe) -->
-<div class="alert alert-danger mt-3 d-flex align-items-center" role="alert">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <div>
-        <strong>Error de acceso:</strong> Solo el SuperUsuario puede asignar roles.
-    </div>
-</div>
+}

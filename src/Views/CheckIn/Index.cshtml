@@ -2,6 +2,16 @@
 @{
     ViewBag.Title = "Web Check-in";
     var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+    bool checkInAbierto = ViewBag.CheckInAbierto != null && (bool)ViewBag.CheckInAbierto;
+    var reservasPasajero = ViewBag.ReservasPasajero as List<AerolineaVIP.Models.Reserva> ?? new List<AerolineaVIP.Models.Reserva>();
+    var pasajerosEncontrados = ViewBag.PasajerosEncontrados as List<AerolineaVIP.Models.Pasajero> ?? new List<AerolineaVIP.Models.Pasajero>();
+}
+
+@if (TempData["ErrorCheckIn"] != null)
+{
+    <div class="alert alert-warning no-print">
+        @TempData["ErrorCheckIn"]
+    </div>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3 no-print">
@@ -16,18 +26,60 @@
 <div class="card p-3 shadow-sm mb-4 no-print">
     @using (Html.BeginForm("Index", "CheckIn", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
     {
+        if (User.IsInRole("Counter"))
+        {
+            <div class="col-md-5">
+                <label class="form-label fw-bold">Buscar pasajero</label>
+                <input type="text" name="pasajero" value="@ViewBag.BusquedaPasajero" class="form-control" placeholder="Nombre, apellido o documento" />
+            </div>
+        }
         <div class="col-md-5">
             <label class="form-label fw-bold">Ingrese el Código de Reserva:</label>
             <input type="text" name="codigoReserva" value="@(Model != null ? Model.CodigoReserva : Request.QueryString["codigoReserva"])" class="form-control" placeholder="Ej. VIP-123456" required />
         </div>
+
         <div class="col-md-3">
             <button type="submit" class="btn btn-vip w-100">Consultar Check-in</button>
         </div>
+
         <div class="col-md-4">
             <small class="text-muted">Disponible para reservas con estado <strong>CONFIRMADA</strong> (pagadas).</small>
         </div>
     }
 </div>
+
+@if (User.IsInRole("Counter") && ViewBag.ReservasPasajero != null)
+{
+    <div class="card p-3 shadow-sm mb-4">
+        <h5>Pasajeros encontrados</h5>
+        @if (pasajerosEncontrados.Any())
+        {
+            <ul class="list-group mb-3">
+                @foreach (var pasajeroEncontrado in pasajerosEncontrados)
+                {
+                    <li class="list-group-item">@pasajeroEncontrado.Nombres @pasajeroEncontrado.Apellidos · @pasajeroEncontrado.TipoDocumentoCodigo @pasajeroEncontrado.NumeroDocumento · @pasajeroEncontrado.Telefono</li>
+                }
+            </ul>
+        }
+        <h5>Reservas confirmadas</h5>
+        @if (reservasPasajero.Any())
+        {
+            <ul class="list-group">
+                @foreach (var reserva in reservasPasajero)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>@reserva.CodigoReserva · @reserva.FechaCreacion.ToString("dd/MM/yyyy")</span>
+                        @Html.ActionLink("Abrir check-in", "Index", new { codigoReserva = reserva.CodigoReserva }, new { @class = "btn btn-sm btn-vip" })
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No se encontraron reservas confirmadas para ese pasajero.</p>
+        }
+    </div>
+}
 
 @if (ViewBag.ErrorCheckIn != null)
 {
@@ -103,7 +155,7 @@
                     </div>
                 </div>
 
-                @if (!checkInListo)
+                @if (!checkInListo && checkInAbierto)
                 {
                     <div class="mt-3 text-end no-print">
                         @using (Html.BeginForm("RegistrarCheckIn", "CheckIn", FormMethod.Post, new { @class = "d-inline" }))
@@ -114,6 +166,10 @@
                             <button type="submit" class="btn btn-vip">Completar Check-in de este Pasajero</button>
                         }
                     </div>
+                }
+                else if (!checkInListo)
+                {
+                    <div class="alert alert-info mt-3 mb-0 no-print">@ViewBag.MensajeVentana</div>
                 }
                 else if (infoCheckIn != null)
                 {

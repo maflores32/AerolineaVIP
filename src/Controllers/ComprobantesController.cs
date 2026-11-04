@@ -8,7 +8,7 @@ using Microsoft.AspNet.Identity;
 
 namespace AerolineaVIP.Controllers
 {
-    [SessionAuthorize(Roles = "Cliente,Counter,Administrador,SuperUsuario")]
+    [SessionAuthorize(Roles = "Cliente")]
     public class ComprobantesController : Controller
     {
         private AerolineaVIP_Entities db = new AerolineaVIP_Entities();
@@ -21,8 +21,6 @@ namespace AerolineaVIP.Controllers
         public ActionResult Index(string codigoReserva)
         {
             string userId = User.Identity.GetUserId();
-            bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
-
             var query = db.vw_ComprobanteDetalle.AsQueryable();
 
             if (!string.IsNullOrEmpty(codigoReserva))
@@ -30,9 +28,8 @@ namespace AerolineaVIP.Controllers
                 codigoReserva = codigoReserva.Trim().ToUpper();
                 query = query.Where(c => c.CodigoReserva == codigoReserva);
             }
-            else if (!esPersonal)
+            else
             {
-                // Consulta estándar limpia por UsuarioId del Identity
                 query = query.Where(c => c.UsuarioId == userId);
             }
 
@@ -55,6 +52,10 @@ namespace AerolineaVIP.Controllers
 
             var comprobante = db.vw_ComprobanteDetalle.FirstOrDefault(c => c.ComprobanteId == id.Value);
             if (comprobante == null)
+            {
+                return HttpNotFound();
+            }
+            if (comprobante.UsuarioId != User.Identity.GetUserId())
             {
                 return HttpNotFound();
             }

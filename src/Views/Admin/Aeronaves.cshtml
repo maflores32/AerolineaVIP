@@ -21,6 +21,22 @@
     <div class="alert alert-danger">@TempData["ErrorAdmin"]</div>
 }
 
+<div class="card p-3 shadow-sm mb-4">
+    <h5>Registrar aeronave</h5>
+    @using (Html.BeginForm("CrearAeronave", "Admin", FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="col-md-4">
+            <label class="form-label">Matrícula</label>
+            <input type="text" name="matricula" class="form-control text-uppercase" minlength="3" maxlength="15" pattern="[A-Za-z0-9-]+" placeholder="AV-04" required />
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Modelo</label>
+            @Html.DropDownList("modeloAeronaveId", (SelectList)ViewBag.Modelos, "Seleccione un modelo", new { @class = "form-select", required = "required" })
+        </div>
+        <div class="col-md-3"><button class="btn btn-primary w-100" type="submit">Crear aeronave</button></div>
+    }
+</div>
 <div class="card p-3 shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -51,12 +67,13 @@
                             {
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="aeronaveId" value="@item.AeronaveId" />
-                                <select name="nuevoEstado" class="form-select form-select-sm" style="width:160px;">
+                                <select name="nuevoEstado" class="form-select form-select-sm admin-estado-aeronave">
                                     <option value="DISPONIBLE" @(item.EstadoAeronaveCodigo == "DISPONIBLE" ? "selected" : "")>DISPONIBLE</option>
                                     <option value="NO_DISPONIBLE" @(item.EstadoAeronaveCodigo == "NO_DISPONIBLE" ? "selected" : "")>NO_DISPONIBLE</option>
                                 </select>
                                 <button type="submit" class="btn btn-sm btn-outline-dark">Guardar</button>
                             }
+                            @Html.ActionLink("Editar", "Edit", "Aeronaves", new { id = item.AeronaveId }, new { @class = "btn btn-sm btn-outline-primary ms-1" })
                         </td>
                     </tr>
                 }

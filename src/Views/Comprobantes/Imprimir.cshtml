@@ -82,6 +82,6 @@
     </table>
 
     <div class="alert alert-secondary small text-center mb-0">
-        <em>@(emisor != null ? emisor.LeyendaComprobante : "DOCUMENTO ACADÉMICO DE DEMOSTRACIÓN · SIN VALIDEZ TRIBUTARIA (DP-05)")</em>
+        <em>@(string.IsNullOrWhiteSpace(emisor?.LeyendaComprobante) ? "DOCUMENTO ACADÉMICO DE DEMOSTRACIÓN · SIN VALIDEZ TRIBUTARIA (DP-05)" : emisor.LeyendaComprobante)</em>
     </div>
 </div>

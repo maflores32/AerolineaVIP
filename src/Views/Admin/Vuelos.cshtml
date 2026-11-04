@@ -31,11 +31,11 @@
         @Html.AntiForgeryToken()
         <div class="col-md-4">
             <label class="form-label fw-bold">Fecha Inicio:</label>
-            <input type="date" name="fechaInicio" class="form-control" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            <input type="date" name="fechaInicio" min="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.AddDays(365).ToString("yyyy-MM-dd")" class="form-control" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
         </div>
         <div class="col-md-4">
             <label class="form-label fw-bold">Fecha Fin:</label>
-            <input type="date" name="fechaFin" class="form-control" required value="@DateTime.Today.AddDays(14).ToString("yyyy-MM-dd")" />
+            <input type="date" name="fechaFin" min="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.AddDays(365).ToString("yyyy-MM-dd")" class="form-control" required value="@DateTime.Today.AddDays(14).ToString("yyyy-MM-dd")" />
         </div>
         <div class="col-md-4">
             <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Desea ejecutar dbo.usp_GenerarVuelos para este rango de fechas?');">
@@ -101,11 +101,18 @@
                             {
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="vueloId" value="@item.VueloId" />
-                                <select name="nuevoEstado" class="form-select form-select-sm" style="width:130px;">
+                                <select name="nuevoEstado" class="form-select form-select-sm admin-estado-vuelo">
                                     <option value="CONFIRMADO" @(item.EstadoVueloCodigo == "CONFIRMADO" ? "selected" : "")>CONFIRMADO</option>
                                     <option value="PROGRAMADO" @(item.EstadoVueloCodigo == "PROGRAMADO" ? "selected" : "")>PROGRAMADO</option>
                                     <option value="CANCELADO" @(item.EstadoVueloCodigo == "CANCELADO" ? "selected" : "")>CANCELADO</option>
                                     <option value="COMPLETADO" @(item.EstadoVueloCodigo == "COMPLETADO" ? "selected" : "")>COMPLETADO</option>
+                                </select>
+                                <select name="aeronaveId" class="form-select form-select-sm" aria-label="Asignar aeronave">
+                                    <option value="">Mantener aeronave</option>
+                                    @foreach (System.Web.Mvc.SelectListItem aeronave in (IEnumerable<System.Web.Mvc.SelectListItem>)ViewBag.Aeronaves)
+                                    {
+                                        <option value="@aeronave.Value" @(item.AeronaveId.HasValue && item.AeronaveId.Value.ToString() == aeronave.Value ? "selected" : "")>@aeronave.Text</option>
+                                    }
                                 </select>
                                 <button type="submit" class="btn btn-sm btn-outline-dark">Actualizar</button>
                             }

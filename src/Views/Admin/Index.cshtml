@@ -1,4 +1,5 @@
-﻿@{
+﻿@model AerolineaVIP.Controllers.AdminDashboardViewModel
+@{
     ViewBag.Title = "Panel de Administración";
 }
 
@@ -6,6 +7,14 @@
     <span class="badge bg-dark mb-1">PANTALLA 17</span>
     <h2 class="mb-1">Panel de Administración Operativa</h2>
     <p class="text-muted mb-0">Seleccione el módulo que desea gestionar dentro del sistema de la aerolínea.</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg"><div class="card h-100 p-3"><span class="text-muted small">Vuelos de hoy</span><strong class="fs-3">@Model.VuelosHoy</strong></div></div>
+    <div class="col-6 col-lg"><div class="card h-100 p-3"><span class="text-muted small">Reservas pendientes</span><strong class="fs-3">@Model.ReservasPendientes</strong></div></div>
+    <div class="col-6 col-lg"><div class="card h-100 p-3"><span class="text-muted small">Aeronaves disponibles</span><strong class="fs-3">@Model.AeronavesDisponibles</strong></div></div>
+    <div class="col-6 col-lg"><div class="card h-100 p-3"><span class="text-muted small">Rutas activas</span><strong class="fs-3">@Model.RutasActivas</strong></div></div>
+    <div class="col-12 col-lg"><div class="card h-100 p-3"><span class="text-muted small">Ingresos del mes (USD)</span><strong class="fs-3">@Model.IngresosMes.ToString("C2")</strong></div></div>
 </div>
 
 @if (TempData["MensajeAdmin"] != null)
@@ -37,9 +46,9 @@
     <div class="col-md-6 col-lg-3">
         <div class="card h-100 shadow-sm border-top border-4 border-success p-3">
             <h5 class="card-title text-success">Usuarios, pasajeros y reservas</h5>
-            <p class="card-text text-muted small">Mantenimiento de Aeropuertos (UIO, GYE, CUE, MEC, GPS), Rutas corporativas, Frecuencias y Pasajeros.</p>
+            <p class="card-text text-muted small">Gestione pasajeros, reservas y configuración de rutas y frecuencias antes de generar vuelos.</p>
             <div class="mt-auto">
-                @Html.ActionLink("Gestionar Personal →", "Gestion", "Admin", null, new { @class = "btn btn-outline-success w-100" })
+                @Html.ActionLink("Gestionar rutas y reservas →", "Gestion", "Admin", new { tab = "rutas" }, new { @class = "btn btn-outline-success w-100" })
             </div>
         </div>
     </div>

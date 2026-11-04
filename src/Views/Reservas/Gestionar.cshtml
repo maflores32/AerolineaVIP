@@ -11,7 +11,14 @@
         <span class="badge bg-dark mb-1">PANTALLA 14</span>
         <h2 class="mb-0">Gestión de Reserva — @Model.CodigoReserva</h2>
     </div>
-    @Html.ActionLink("← Volver a Mis Reservas", "MisReservas", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+    @if (ViewBag.EsCounter == true)
+    {
+        @Html.ActionLink("← Volver a reservas", "Gestion", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+    }
+    else
+    {
+        @Html.ActionLink("← Volver a Mis Reservas", "MisReservas", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+    }
 </div>
 
 @if (TempData["MensajeGestion"] != null)
@@ -51,7 +58,7 @@
 
             <hr />
             <div class="d-flex flex-wrap gap-2">
-                @if (Model.EstadoReservaCodigo == "PENDIENTE")
+                @if (Model.EstadoReservaCodigo == "PENDIENTE" && ViewBag.EsCounter != true)
                 {
                     @Html.ActionLink("Pagar Reserva Ahora", "Pagar", "Compras", new { reservaId = Model.ReservaId }, new { @class = "btn btn-vip" })
                 }
@@ -60,7 +67,7 @@
                     @Html.ActionLink("Ir a Check-in", "Index", "CheckIn", new { codigoReserva = Model.CodigoReserva }, new { @class = "btn btn-success" })
                     @Html.ActionLink("Ver Comprobante", "Index", "Comprobantes", new { codigoReserva = Model.CodigoReserva }, new { @class = "btn btn-outline-primary" })
                 }
-                @if (Model.EstadoReservaCodigo != "CANCELADA")
+                @if (Model.EstadoReservaCodigo != "CANCELADA" && ViewBag.EsCounter != true)
                 {
                     using (Html.BeginForm("CancelarReserva", "Reservas", FormMethod.Post, new { onsubmit = "return confirm('¿Está seguro de cancelar esta reserva y liberar sus asientos?');" }))
                     {
@@ -101,13 +108,13 @@
                                     <small class="text-muted">@asig.EstadoAsignacionCodigo</small>
                                 </td>
                                 <td>
-                                    @if (Model.EstadoReservaCodigo != "CANCELADA" && disponibles.Any())
+                                    @if (ViewBag.EsCounter != true && Model.EstadoReservaCodigo != "CANCELADA" && disponibles.Any())
                                     {
                                         using (Html.BeginForm("CambiarAsiento", "Reservas", FormMethod.Post, new { @class = "d-flex gap-1" }))
                                         {
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="asignacionId" value="@asig.AsignacionId" />
-                                            <select name="nuevoAsiento" class="form-select form-select-sm" style="width:130px;">
+                                            <select name="nuevoAsiento" class="form-select form-select-sm reserva-asiento-select">
                                                 @foreach (var disp in disponibles)
                                                 {
                                                     <option value="@disp.NumeroAsiento">@disp.CodigoAsiento (#@disp.NumeroAsiento)</option>

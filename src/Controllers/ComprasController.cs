@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -33,6 +34,11 @@ namespace AerolineaVIP.Controllers
                 return HttpNotFound();
             }
 
+            if (reserva.UsuarioId != User.Identity.GetUserId())
+            {
+                return HttpNotFound();
+            }
+
             if (reserva.EstadoReservaCodigo == "CONFIRMADA")
             {
                 var compraExistente = db.Compras.FirstOrDefault(c => c.ReservaId == reserva.ReservaId && c.EstadoCompraCodigo == "PAGADA");
@@ -40,6 +46,13 @@ namespace AerolineaVIP.Controllers
                 {
                     return RedirectToAction("Confirmacion", new { id = compraExistente.CompraId });
                 }
+            }
+
+            if (reserva.EstadoReservaCodigo != "PENDIENTE" ||
+                (reserva.FechaExpiracion.HasValue && reserva.FechaExpiracion.Value <= DateTime.Now))
+            {
+                TempData["ErrorPago"] = "La reserva ya no está disponible para pago.";
+                return RedirectToAction("MisReservas", "Reservas");
             }
 
             var primerTramo = reserva.ReservaPasajeroVueloes.FirstOrDefault();
@@ -77,24 +90,22 @@ namespace AerolineaVIP.Controllers
                 .Include(r => r.ReservaPasajeroVueloes)
                 .FirstOrDefault(r => r.ReservaId == reservaId);
 
-            if (reserva == null || reserva.EstadoReservaCodigo == "CANCELADA")
+            if (reserva == null)
             {
                 TempData["ErrorPago"] = "La reserva no está disponible para procesar pagos.";
                 return RedirectToAction("MisReservas", "Reservas");
             }
 
-            // Validación de titularidad
             string userId = User.Identity.GetUserId();
-            bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
-            if (!esPersonal && reserva.UsuarioId != userId)
+            if (reserva.UsuarioId != userId)
             {
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+                return HttpNotFound();
             }
 
-            // Validar que la reserva esté pendiente de pago
-            if (reserva.EstadoReservaCodigo != "PENDIENTE")
+            if (reserva.EstadoReservaCodigo != "PENDIENTE" ||
+                (reserva.FechaExpiracion.HasValue && reserva.FechaExpiracion.Value <= DateTime.Now))
             {
-                TempData["ErrorPago"] = "Esta reserva ya fue procesada o su estado no es PENDIENTE.";
+                TempData["ErrorPago"] = "La reserva ya fue procesada o expiró.";
                 return RedirectToAction("MisReservas", "Reservas");
             }
 
@@ -102,40 +113,77 @@ namespace AerolineaVIP.Controllers
             // VALIDACIÓN DEL FORMATO DE LA TARJETA EN EL SERVIDOR
             // ============================================================
             string soloNumeros = new string((numeroTarjeta ?? "").Where(char.IsDigit).ToArray());
-            if (soloNumeros.Length < 13 || soloNumeros.Length > 19)
+            if ((numeroTarjeta ?? "").Any(c => !char.IsDigit(c) && c != ' ' && c != '-') || soloNumeros.Length < 13 || soloNumeros.Length > 19)
             {
                 TempData["ErrorPago"] = "El número de tarjeta debe contener entre 13 y 19 dígitos numéricos.";
                 return RedirectToAction("Pagar", new { reservaId = reservaId });
             }
 
             string soloCvv = new string((cvv ?? "").Where(char.IsDigit).ToArray());
-            if (soloCvv.Length < 3 || soloCvv.Length > 4)
+            if ((cvv ?? "").Any(c => !char.IsDigit(c)) || soloCvv.Length < 3 || soloCvv.Length > 4)
             {
                 TempData["ErrorPago"] = "El código de seguridad (CVV) debe contener 3 o 4 dígitos numéricos.";
                 return RedirectToAction("Pagar", new { reservaId = reservaId });
             }
 
-            int mes = 0, anio = 0;
-            int.TryParse(mesExpiracion, out mes);
-            int.TryParse(anioExpiracion, out anio);
-
-            DateTime hoy = DateTime.Today;
-            if (anio < hoy.Year || (anio == hoy.Year && mes < hoy.Month))
+            int mes, anio;
+            if (!int.TryParse(mesExpiracion, out mes) || mes < 1 || mes > 12 ||
+                !int.TryParse(anioExpiracion, out anio) || anio < DateTime.Today.Year ||
+                (anio == DateTime.Today.Year && mes < DateTime.Today.Month))
             {
-                TempData["ErrorPago"] = "La fecha de vencimiento de la tarjeta no puede estar en el pasado.";
+                TempData["ErrorPago"] = "Ingrese una fecha de vencimiento válida y vigente.";
                 return RedirectToAction("Pagar", new { reservaId = reservaId });
             }
 
-            decimal totalPagar = reserva.ReservaPasajeroVueloes.Sum(x => x.ImporteTramo);
+            string titular = (nombreTitular ?? "").Trim();
+            if (titular.Length < 3 || titular.Length > 80 || titular.Any(c => !char.IsLetter(c) && c != ' ' && c != '\'' && c != '-'))
+            {
+                TempData["ErrorPago"] = "Ingrese el nombre del titular usando letras y espacios.";
+                return RedirectToAction("Pagar", new { reservaId = reservaId });
+            }
+
+            bool metodoActivo = db.MetodoPagoes.Any(m => m.Codigo == metodoPagoCodigo && m.Activo);
+            bool marcaActiva = db.MarcaTarjetas.Any(m => m.Codigo == marcaTarjetaCodigo && m.Activa);
+            if (!metodoActivo || !marcaActiva)
+            {
+                TempData["ErrorPago"] = "Seleccione un método y una marca de tarjeta disponibles.";
+                return RedirectToAction("Pagar", new { reservaId = reservaId });
+            }
+
             string cuatroDigitos = soloNumeros.Substring(soloNumeros.Length - 4);
 
             // Regla de simulación: si la tarjeta termina en '0000', se simula un RECHAZO BANCARIO (como en el script SQL)
             bool esRechazada = cuatroDigitos == "0000";
 
-            using (var transaccion = db.Database.BeginTransaction())
+            using (var transaccion = db.Database.BeginTransaction(IsolationLevel.Serializable))
             {
                 try
                 {
+                    db.Entry(reserva).Reload();
+                    if (reserva.EstadoReservaCodigo == "CONFIRMADA")
+                    {
+                        var compraPagada = db.Compras.FirstOrDefault(c => c.ReservaId == reserva.ReservaId && c.EstadoCompraCodigo == "PAGADA");
+                        if (compraPagada != null)
+                        {
+                            transaccion.Commit();
+                            return RedirectToAction("Confirmacion", new { id = compraPagada.CompraId });
+                        }
+                    }
+
+                    if (reserva.UsuarioId != User.Identity.GetUserId() || reserva.EstadoReservaCodigo != "PENDIENTE" ||
+                        (reserva.FechaExpiracion.HasValue && reserva.FechaExpiracion.Value <= DateTime.Now))
+                    {
+                        transaccion.Rollback();
+                        TempData["ErrorPago"] = "La reserva ya no está disponible para pago.";
+                        return RedirectToAction("MisReservas", "Reservas");
+                    }
+
+                    foreach (var asignacion in reserva.ReservaPasajeroVueloes)
+                    {
+                        db.Entry(asignacion).Reload();
+                    }
+                    decimal totalPagar = reserva.ReservaPasajeroVueloes.Sum(x => x.ImporteTramo);
+
                     // 1. Crear registro de Compra
                     var nuevaCompra = new Compra
                     {
@@ -160,7 +208,7 @@ namespace AerolineaVIP.Controllers
                         MetodoPagoCodigo = !string.IsNullOrEmpty(metodoPagoCodigo) ? metodoPagoCodigo : "TARJETA_CREDITO",
                         MarcaTarjetaCodigo = !string.IsNullOrEmpty(marcaTarjetaCodigo) ? marcaTarjetaCodigo : "VISA",
                         UltimosCuatroDigitos = cuatroDigitos,
-                        NombreTitular = (nombreTitular ?? "TITULAR SIMULADO").ToUpper().Trim(),
+                        NombreTitular = titular.ToUpperInvariant(),
                         CodigoOperacion = codOperacion,
                         EsSimulado = true,
                         MensajeResultado = esRechazada ? "Pago simulado rechazado por fondos insuficientes (demostración)." : "Pago simulado aprobado exitosamente."
@@ -214,14 +262,34 @@ namespace AerolineaVIP.Controllers
                 catch (Exception ex)
                 {
                     transaccion.Rollback();
-                    string msg = ex.InnerException != null && ex.InnerException.InnerException != null
-                        ? ex.InnerException.InnerException.Message
-                        : ex.Message;
-
-                    TempData["ErrorPago"] = "No se pudo procesar la compra: " + msg;
+                    TempData["ErrorPago"] = "No se pudo completar el pago. Revise la reserva e inténtelo de nuevo.";
                     return RedirectToAction("Pagar", new { reservaId = reservaId });
                 }
             }
+        }
+
+        [HttpGet]
+        public ActionResult Confirmacion(int? id)
+        {
+            if (!id.HasValue)
+            {
+                return RedirectToAction("MisReservas", "Reservas");
+            }
+
+            var compra = db.Compras
+                .Include(c => c.Reserva.ReservaPasajeroVueloes.Select(a => a.Pasajero))
+                .Include(c => c.Pagoes)
+                .Include(c => c.Comprobantes)
+                .FirstOrDefault(c => c.CompraId == id.Value && c.EstadoCompraCodigo == "PAGADA");
+
+            if (compra == null || compra.Reserva.UsuarioId != User.Identity.GetUserId())
+            {
+                return HttpNotFound();
+            }
+
+            var primerTramo = compra.Reserva.ReservaPasajeroVueloes.FirstOrDefault();
+            ViewBag.Vuelo = primerTramo == null ? null : db.vw_VueloDetalle.FirstOrDefault(v => v.VueloId == primerTramo.VueloId);
+            return View(compra);
         }
 
         // GET: /Comprobantes/Imprimir/5
@@ -241,8 +309,7 @@ namespace AerolineaVIP.Controllers
 
             // VALIDACIÓN DE TITULARIDAD: Solo el dueño o el personal puede ver el comprobante
             string userId = User.Identity.GetUserId();
-            bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
-            if (!esPersonal && comprobante.UsuarioId != userId)
+            if (comprobante.UsuarioId != userId)
             {
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden, "No tiene permisos para ver este comprobante.");
             }

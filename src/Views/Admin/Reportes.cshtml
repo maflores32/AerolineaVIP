@@ -57,8 +57,8 @@
                             <span class="badge bg-success">@item.Disponibles libres</span>
                         </td>
                         <td>
-                            <div class="progress" style="height: 18px;">
-                                <div class="progress-bar @(item.PorcentajeOcupacion >= 50 ? "bg-success" : "bg-warning text-dark")" role="progressbar" style="width: @item.PorcentajeOcupacion%;" aria-valuenow="@item.PorcentajeOcupacion" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress reporte-progreso">
+                                <div class="progress-bar @(item.PorcentajeOcupacion >= 50 ? "bg-success" : "bg-warning text-dark")" role="progressbar" aria-valuenow="@item.PorcentajeOcupacion" aria-valuemin="0" aria-valuemax="100" style="width: @item.PorcentajeOcupacion%;">
                                     @item.PorcentajeOcupacion%
                                 </div>
                             </div>

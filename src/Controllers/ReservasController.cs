@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -12,6 +13,11 @@ namespace AerolineaVIP.Controllers
     public class ReservasController : Controller
     {
         private AerolineaVIP_Entities db = new AerolineaVIP_Entities();
+
+        private bool EsCliente
+        {
+            get { return User.IsInRole("Cliente"); }
+        }
 
         // ============================================================
         // PANTALLA 8: /Reservas/SeleccionAsiento
@@ -26,8 +32,11 @@ namespace AerolineaVIP.Controllers
             }
 
             int numPasajeros = pasajeros ?? 1;
-            if (numPasajeros < 1) numPasajeros = 1;
-            if (numPasajeros > 7) numPasajeros = 7;
+            if (numPasajeros < 1 || numPasajeros > 7)
+            {
+                TempData["ErrorAsientos"] = "Seleccione entre 1 y 7 pasajeros.";
+                return RedirectToAction("Buscar", "Vuelos");
+            }
 
             var vuelo = db.vw_VueloDetalle.FirstOrDefault(v => v.VueloId == vueloId.Value);
             if (vuelo == null)
@@ -52,7 +61,9 @@ namespace AerolineaVIP.Controllers
         [SessionAuthorize(Roles = "Cliente")]
         public ActionResult SeleccionAsiento(int vueloId, int pasajeros, int[] asientosSeleccionados)
         {
-            if (asientosSeleccionados == null || asientosSeleccionados.Length != pasajeros)
+            if (pasajeros < 1 || pasajeros > 7 || asientosSeleccionados == null || asientosSeleccionados.Length != pasajeros ||
+                asientosSeleccionados.Distinct().Count() != asientosSeleccionados.Length ||
+                asientosSeleccionados.Any(a => a < 1 || a > 7))
             {
                 TempData["ErrorAsientos"] = "Debe seleccionar exactamente " + pasajeros + " asiento(s) disponible(s).";
                 return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId, pasajeros = pasajeros });
@@ -80,9 +91,17 @@ namespace AerolineaVIP.Controllers
                 return HttpNotFound();
             }
 
-            var numerosAsiento = asientos.Split(',')
-                .Select(s => byte.Parse(s.Trim()))
-                .ToList();
+            var numerosAsiento = new List<byte>();
+            foreach (string valor in asientos.Split(','))
+            {
+                byte numero;
+                if (!byte.TryParse(valor.Trim(), out numero) || numero < 1 || numero > 7 || numerosAsiento.Contains(numero))
+                {
+                    TempData["ErrorAsientos"] = "La selección de asientos no es válida. Vuelva a elegirlos.";
+                    return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId.Value });
+                }
+                numerosAsiento.Add(numero);
+            }
 
             var infoAsientos = db.vw_EstadoAsientoVuelo
                 .Where(a => a.VueloId == vueloId.Value && numerosAsiento.Contains(a.NumeroAsiento))
@@ -113,9 +132,67 @@ namespace AerolineaVIP.Controllers
             string[] telefono)
         {
             var vuelo = db.vw_VueloDetalle.FirstOrDefault(v => v.VueloId == vueloId);
-            if (vuelo == null || numeroAsiento == null || numeroAsiento.Length == 0)
+            int cantidadPasajeros = numeroAsiento == null ? 0 : numeroAsiento.Length;
+            if (vuelo == null || cantidadPasajeros < 1 || cantidadPasajeros > 7 ||
+                tipoDocumento == null || tipoDocumento.Length != cantidadPasajeros ||
+                numeroDocumento == null || numeroDocumento.Length != cantidadPasajeros ||
+                nombres == null || nombres.Length != cantidadPasajeros ||
+                apellidos == null || apellidos.Length != cantidadPasajeros ||
+                correo == null || correo.Length != cantidadPasajeros ||
+                telefono == null || telefono.Length != cantidadPasajeros ||
+                (fechaNacimiento != null && fechaNacimiento.Length != cantidadPasajeros))
             {
+                TempData["ErrorAsientos"] = "Revise los datos de todos los pasajeros e inténtelo de nuevo.";
                 return RedirectToAction("Buscar", "Vuelos");
+            }
+
+            DateTime salida = vuelo.FechaOperacion.Date.Add(vuelo.HoraSalida);
+            if (salida <= DateTime.Now)
+            {
+                TempData["ErrorAsientos"] = "No se pueden reservar vuelos que ya salieron.";
+                return RedirectToAction("Buscar", "Vuelos");
+            }
+
+            if (numeroAsiento.Distinct().Count() != cantidadPasajeros || numeroAsiento.Any(n => n < 1 || n > 7))
+            {
+                TempData["ErrorAsientos"] = "La selección de asientos no es válida.";
+                return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId, pasajeros = cantidadPasajeros });
+            }
+
+            var asientosExistentes = db.vw_EstadoAsientoVuelo
+                .Where(a => a.VueloId == vueloId)
+                .Select(a => a.NumeroAsiento)
+                .ToList();
+            if (numeroAsiento.Any(n => !asientosExistentes.Contains((byte)n)))
+            {
+                TempData["ErrorAsientos"] = "Uno o más asientos no pertenecen a la cabina de este vuelo.";
+                return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId, pasajeros = cantidadPasajeros });
+            }
+
+            var documentosPasajeros = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < cantidadPasajeros; i++)
+            {
+                string doc = (numeroDocumento[i] ?? "").Trim();
+                string nombre = (nombres[i] ?? "").Trim();
+                string apellido = (apellidos[i] ?? "").Trim();
+                string email = (correo[i] ?? "").Trim();
+                string telefonoPasajero = (telefono[i] ?? "").Trim();
+                bool emailValido;
+                try { emailValido = new System.Net.Mail.MailAddress(email).Address == email; }
+                catch { emailValido = false; }
+                bool documentoDuplicado = !documentosPasajeros.Add(tipoDocumento[i] + "|" + doc);
+
+                if (documentoDuplicado || string.IsNullOrWhiteSpace(tipoDocumento[i]) || !db.TipoDocumentoIdentidads.Any(t => t.Codigo == tipoDocumento[i]) ||
+                    doc.Length < 5 || doc.Length > 20 || doc.Any(c => !char.IsLetterOrDigit(c)) ||
+                    nombre.Length < 2 || nombre.Length > 80 || nombre.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\'') ||
+                    apellido.Length < 2 || apellido.Length > 80 || apellido.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\'') ||
+                    !emailValido || email.Length > 120 || telefonoPasajero.Length < 7 || telefonoPasajero.Length > 25 ||
+                    telefonoPasajero.Any(c => !char.IsDigit(c) && c != ' ' && c != '+' && c != '-' && c != '(' && c != ')') ||
+                    (fechaNacimiento != null && fechaNacimiento[i].HasValue && fechaNacimiento[i].Value.Date > DateTime.Today))
+                {
+                    TempData["ErrorAsientos"] = "Revise nombres, documento, fecha de nacimiento, correo y teléfono del pasajero " + (i + 1) + ".";
+                    return RedirectToAction("Pasajeros", new { vueloId = vueloId, asientos = string.Join(",", numeroAsiento) });
+                }
             }
 
             // Validar estado del vuelo
@@ -131,7 +208,9 @@ namespace AerolineaVIP.Controllers
             var ocupados = db.ReservaPasajeroVueloes
                 .Where(r => r.VueloId == vueloId
                          && listaAsientosBytes.Contains(r.NumeroAsiento)
-                         && (r.EstadoAsignacionCodigo == "PENDIENTE" || r.EstadoAsignacionCodigo == "CONFIRMADA"))
+                         && (r.EstadoAsignacionCodigo == "CONFIRMADA" ||
+                             (r.EstadoAsignacionCodigo == "PENDIENTE" &&
+                              (!r.Reserva.FechaExpiracion.HasValue || r.Reserva.FechaExpiracion.Value > DateTime.Now))))
                 .Any();
 
             if (ocupados)
@@ -141,10 +220,24 @@ namespace AerolineaVIP.Controllers
             }
 
             // TRANSACCIÓN ATÓMICA DE BASE DE DATOS (Si un asiento falla, se revierte toda la reserva)
-            using (var transaccion = db.Database.BeginTransaction())
+            using (var transaccion = db.Database.BeginTransaction(IsolationLevel.Serializable))
             {
                 try
                 {
+                    bool asientoOcupadoEnTransaccion = db.ReservaPasajeroVueloes
+                        .Where(r => r.VueloId == vueloId
+                                 && listaAsientosBytes.Contains(r.NumeroAsiento)
+                                 && (r.EstadoAsignacionCodigo == "CONFIRMADA" ||
+                                     (r.EstadoAsignacionCodigo == "PENDIENTE" &&
+                                      (!r.Reserva.FechaExpiracion.HasValue || r.Reserva.FechaExpiracion.Value > DateTime.Now))))
+                        .Any();
+                    if (asientoOcupadoEnTransaccion)
+                    {
+                        transaccion.Rollback();
+                        TempData["ErrorAsientos"] = "Uno o más asientos acaban de ser reservados. Elija otros.";
+                        return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId, pasajeros = cantidadPasajeros });
+                    }
+
                     string codigoGenerado = "VIP-" + DateTime.Now.ToString("HHmmss");
                     while (db.Reservas.Any(r => r.CodigoReserva == codigoGenerado))
                     {
@@ -291,8 +384,11 @@ namespace AerolineaVIP.Controllers
         [HttpGet]
         public ActionResult MisReservas(string estado)
         {
+            if (!EsCliente)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
             string userId = User.Identity.GetUserId();
-            bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
 
             var query = db.Reservas
                 .Include(r => r.EstadoReserva)
@@ -300,11 +396,7 @@ namespace AerolineaVIP.Controllers
                 .Include(r => r.Compras)
                 .AsQueryable();
 
-            // Consulta estándar limpia: si es cliente, filtra únicamente por su UsuarioId real
-            if (!esPersonal)
-            {
-                query = query.Where(r => r.UsuarioId == userId);
-            }
+            query = query.Where(r => r.UsuarioId == userId);
 
             if (!string.IsNullOrEmpty(estado))
             {
@@ -319,6 +411,19 @@ namespace AerolineaVIP.Controllers
             return View(lista);
         }
 
+        [HttpGet]
+        [SessionAuthorize(Roles = "Counter")]
+        public ActionResult Gestion()
+        {
+            var reservas = db.Reservas
+                .Include(r => r.ReservaPasajeroVueloes.Select(a => a.Pasajero))
+                .OrderByDescending(r => r.FechaCreacion)
+                .Take(100)
+                .ToList();
+            ViewBag.VuelosDict = db.vw_VueloDetalle.ToDictionary(v => v.VueloId, v => v);
+            return View("MisReservas", reservas);
+        }
+
         // ============================================================
         // PANTALLA 14: /Reservas/Gestionar/{id}
         // ============================================================
@@ -326,6 +431,10 @@ namespace AerolineaVIP.Controllers
         [HttpGet]
         public ActionResult Gestionar(int? id)
         {
+            if (!EsCliente && !User.IsInRole("Counter"))
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
             if (!id.HasValue)
             {
                 return RedirectToAction("MisReservas");
@@ -344,8 +453,8 @@ namespace AerolineaVIP.Controllers
 
             // VALIDACIÓN DE TITULARIDAD
             string userId = User.Identity.GetUserId();
-            bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
-            if (!esPersonal && reserva.UsuarioId != userId)
+            bool esCounter = User.IsInRole("Counter");
+            if (!esCounter && reserva.UsuarioId != userId)
             {
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden, "No tiene permisos para gestionar esta reserva.");
             }
@@ -365,6 +474,7 @@ namespace AerolineaVIP.Controllers
 
             ViewBag.Vuelo = vuelo;
             ViewBag.AsientosDisponibles = asientosDisponibles;
+            ViewBag.EsCounter = esCounter;
 
             return View(reserva);
         }
@@ -374,6 +484,10 @@ namespace AerolineaVIP.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult CambiarAsiento(int asignacionId, byte nuevoAsiento)
         {
+            if (!EsCliente)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
             var asignacion = db.ReservaPasajeroVueloes
                 .Include(a => a.Reserva)
                 .FirstOrDefault(a => a.AsignacionId == asignacionId);
@@ -385,8 +499,7 @@ namespace AerolineaVIP.Controllers
 
             // VALIDACIÓN DE TITULARIDAD
             string userId = User.Identity.GetUserId();
-            bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
-            if (!esPersonal && asignacion.Reserva.UsuarioId != userId)
+            if (asignacion.Reserva.UsuarioId != userId)
             {
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
             }
@@ -415,6 +528,10 @@ namespace AerolineaVIP.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult CancelarReserva(int reservaId)
         {
+            if (!EsCliente)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
             var reserva = db.Reservas
                 .Include(r => r.ReservaPasajeroVueloes)
                 .FirstOrDefault(r => r.ReservaId == reservaId);
@@ -423,8 +540,7 @@ namespace AerolineaVIP.Controllers
             {
                 // VALIDACIÓN DE TITULARIDAD
                 string userId = User.Identity.GetUserId();
-                bool esPersonal = User.IsInRole("SuperUsuario") || User.IsInRole("Administrador") || User.IsInRole("Counter");
-                if (!esPersonal && reserva.UsuarioId != userId)
+                if (reserva.UsuarioId != userId)
                 {
                     return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
                 }
