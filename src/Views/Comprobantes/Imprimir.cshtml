@@ -1,0 +1,87 @@
+﻿@model AerolineaVIP.Models.vw_ComprobanteDetalle
+@{
+    ViewBag.Title = "Comprobante " + Model.NumeroComprobante;
+    var emisor = ViewBag.Emisor as AerolineaVIP.Models.DatosEmisor;
+    var asignaciones = ViewBag.Asignaciones as List<AerolineaVIP.Models.ReservaPasajeroVuelo> ?? new List<AerolineaVIP.Models.ReservaPasajeroVuelo>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    @Html.ActionLink("← Volver a comprobantes", "Index", "Comprobantes", null, new { @class = "btn btn-outline-secondary" })
+    <button onclick="window.print();" class="btn btn-vip">
+        Imprimir / Guardar como PDF
+    </button>
+</div>
+
+<div class="invoice-card">
+    <div class="row align-items-center mb-4">
+        <div class="col-sm-7">
+            <h2 class="text-primary mb-1">@(emisor != null ? emisor.NombreComercial : "AEROLÍNEA VIP S.A.")</h2>
+            <p class="text-muted small mb-0">
+                RUC: @(emisor != null ? emisor.Identificacion : "1790012345001")<br />
+                Dirección: @(emisor != null ? emisor.Direccion : "Av. Amazonas y República, Quito - Ecuador")<br />
+                Teléfono: @(emisor != null ? emisor.Telefono : "(02) 299-0000") · Correo: @(emisor != null ? emisor.Correo : "contacto@aerolineavip.ec")
+            </p>
+        </div>
+        <div class="col-sm-5 text-sm-end border-start ps-3">
+            <span class="badge bg-dark fs-6 mb-2">@Model.TipoComprobante</span>
+            <h4 class="mb-1 text-danger">@Model.NumeroComprobante</h4>
+            <div class="small text-muted">Fecha de emisión: @Model.FechaEmision.ToString("dd/MM/yyyy HH:mm")</div>
+            <div class="small text-muted">Estado: <strong>@Model.EstadoComprobanteCodigo</strong></div>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="row mb-4">
+        <div class="col-sm-6">
+            <h6 class="fw-bold text-muted">DATOS DE LA RESERVA</h6>
+            <div>Código de Reserva: <strong>@Model.CodigoReserva</strong></div>
+            <div>Fecha de Compra: @Model.FechaCompra.ToString("dd/MM/yyyy HH:mm")</div>
+            <div>Método de Pago: @Model.MetodoPago</div>
+        </div>
+        <div class="col-sm-6">
+            <h6 class="fw-bold text-muted">DATOS DE LA TRANSACCIÓN SIMULADA</h6>
+            <div>Tarjeta: @Model.MarcaTarjeta **** @Model.TarjetaEnmascarada</div>
+            <div>Código de Operación: @Model.CodigoOperacion</div>
+            <div>Entorno: Demostración académica (DP-03 / DP-05)</div>
+        </div>
+    </div>
+
+    <table class="table table-bordered align-middle mb-4">
+        <thead class="table-light">
+            <tr>
+                <th>Ítem / Pasajero</th>
+                <th>Asiento</th>
+                <th>Vuelo / Tramo</th>
+                <th class="text-end">Tarifa</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var asig in asignaciones)
+            {
+                <tr>
+                    <td>
+                        <strong>@asig.Pasajero.Nombres @asig.Pasajero.Apellidos</strong><br />
+                        <small class="text-muted">@asig.Pasajero.TipoDocumentoCodigo: @asig.Pasajero.NumeroDocumento</small>
+                    </td>
+                    <td><span class="badge bg-danger">Asiento #@asig.NumeroAsiento</span></td>
+                    <td>
+                        Vuelo #@asig.VueloId<br />
+                        <small class="text-muted">Fecha: @asig.Vuelo.FechaOperacion.ToString("dd/MM/yyyy")</small>
+                    </td>
+                    <td class="text-end">@string.Format("{0:C2}", asig.ImporteTramo)</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">Total (@Model.MonedaCodigo):</th>
+                <th class="text-end fs-5 text-success">@string.Format("{0:C2}", Model.TotalOperacion)</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="alert alert-secondary small text-center mb-0">
+        <em>@(emisor != null ? emisor.LeyendaComprobante : "DOCUMENTO ACADÉMICO DE DEMOSTRACIÓN · SIN VALIDEZ TRIBUTARIA (DP-05)")</em>
+    </div>
+</div>

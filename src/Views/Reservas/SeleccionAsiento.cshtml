@@ -1,0 +1,203 @@
+﻿@model AerolineaVIP.Models.vw_VueloDetalle
+@{
+    ViewBag.Title = "Selección de Asientos";
+    var asientos = ViewBag.Asientos as List<AerolineaVIP.Models.vw_EstadoAsientoVuelo> ?? new List<AerolineaVIP.Models.vw_EstadoAsientoVuelo>();
+    int numPasajeros = ViewBag.Pasajeros != null ? (int)ViewBag.Pasajeros : 1;
+}
+
+<style>
+    .cabin-select-box {
+        background: #f8fafc;
+        border: 2px solid #0b2545;
+        border-radius: 36px 36px 16px 16px;
+        max-width: 440px;
+        margin: 0 auto;
+        padding: 25px 30px;
+    }
+
+    .seat-option {
+        width: 125px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        text-align: center;
+        color: #fff;
+        font-weight: 600;
+        display: block;
+        transition: all 0.2s ease;
+    }
+
+    .seat-free {
+        background-color: #198754;
+        border: 2px solid #146c43;
+        cursor: pointer;
+    }
+
+    .seat-option.selected {
+        background-color: #0d6efd !important;
+        border-color: #0a58ca !important;
+        transform: scale(1.04);
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.35);
+    }
+
+    .seat-reserved {
+        background-color: #6f42c1;
+        opacity: 0.8;
+    }
+
+    .seat-occupied {
+        background-color: #dc3545;
+        opacity: 0.8;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 08</span>
+        <h2 class="mb-0">Selección de Asientos — Vuelo @Model.CodigoVuelo</h2>
+        <p class="text-muted mb-0">@Model.CiudadOrigen (@Model.Origen) &rarr; @Model.CiudadDestino (@Model.Destino) · @Model.FechaOperacion.ToString("dd/MM/yyyy") (@Model.HoraSalida.ToString(@"hh\:mm"))</p>
+    </div>
+    @Html.ActionLink("← Volver al vuelo", "Disponibilidad", "Vuelos", new { id = Model.VueloId, pasajeros = numPasajeros }, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@if (TempData["ErrorAsientos"] != null)
+{
+    <div class="alert alert-danger">
+        <strong>Atención:</strong> @TempData["ErrorAsientos"]
+    </div>
+}
+
+@using (Html.BeginForm("SeleccionAsiento", "Reservas", FormMethod.Post, new { id = "formSeleccionAsientos" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="vueloId" value="@Model.VueloId" />
+    <input type="hidden" name="pasajeros" value="@numPasajeros" />
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card p-3 shadow-sm mb-3">
+                <h4>Instrucciones de Selección</h4>
+                <hr />
+                <p>Debe marcar exactamente <strong>@numPasajeros</strong> asiento(s) de color <strong>verde (DISPONIBLE)</strong>.</p>
+                <ul class="small text-muted">
+                    <li><strong>Verde:</strong> Disponible para seleccionar.</li>
+                    <li><strong>Azul:</strong> Asiento que tienes marcado actualmente.</li>
+                    <li><strong>Morado:</strong> Reservado temporalmente por otro cliente.</li>
+                    <li><strong>Rojo:</strong> Ocupado / Boleto ya emitido por el sistema.</li>
+                </ul>
+                <hr />
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Pasajeros solicitados:</span>
+                    <strong>@numPasajeros</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Tarifa por asiento:</span>
+                    <strong>@string.Format("{0:C2}", Model.TarifaReferencial)</strong>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-vip btn-lg" id="btnContinuar">Continuar al Registro de Pasajeros &rarr;</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card p-3 shadow-sm">
+                <h5 class="text-center mb-3">Cabina Embraer Phenom 300E (Seleccionados: <span id="contadorSeleccionados">0</span> de @numPasajeros)</h5>
+
+                <div class="cabin-select-box">
+                    <div class="text-center fw-bold border-bottom pb-2 mb-3">▲ FRENTE DE LA AERONAVE ▲</div>
+
+                    @for (byte fila = 1; fila <= 4; fila++)
+                    {
+                        var izq = asientos.FirstOrDefault(a => a.Fila == fila && a.Lado != null && a.Lado.Trim() == "I");
+                        var der = asientos.FirstOrDefault(a => a.Fila == fila && a.Lado != null && a.Lado.Trim() == "D");
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                @if (izq != null)
+                                {
+                                    bool libre = izq.EstadoVisual == "DISPONIBLE";
+                                    string css = libre ? "seat-free" : (izq.EstadoVisual == "RESERVADO" ? "seat-reserved" : "seat-occupied");
+                                    <label class="seat-option @css" id="lbl_@izq.NumeroAsiento">
+                                        @if (libre)
+                                        {
+                                            <input type="checkbox" name="asientosSeleccionados" value="@izq.NumeroAsiento" class="form-check-input me-1 chk-asiento" />
+                                        }
+                                        <span>@izq.CodigoAsiento</span>
+                                        <div class="small">@izq.EstadoVisual</div>
+                                    </label>
+                                }
+                                else
+                                {
+                                    <div style="width:125px; text-align:center;" class="text-muted small"><em>Acceso / Galley</em></div>
+                                }
+                            </div>
+
+                            <div class="text-muted small fw-bold">Fila @fila</div>
+
+                            <div>
+                                @if (der != null)
+                                {
+                                    bool libre = der.EstadoVisual == "DISPONIBLE";
+                                    string css = libre ? "seat-free" : (der.EstadoVisual == "RESERVADO" ? "seat-reserved" : "seat-occupied");
+                                    <label class="seat-option @css" id="lbl_@der.NumeroAsiento">
+                                        @if (libre)
+                                        {
+                                            <input type="checkbox" name="asientosSeleccionados" value="@der.NumeroAsiento" class="form-check-input me-1 chk-asiento" />
+                                        }
+                                        <span>@der.CodigoAsiento</span>
+                                        <div class="small">@der.EstadoVisual</div>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            var maxPasajeros = @numPasajeros;
+
+            $('.chk-asiento').on('change', function () {
+                var seleccionados = $('.chk-asiento:checked');
+
+                // Si se solicitó 1 solo pasajero y hace clic en otro, desmarca el anterior
+                if (maxPasajeros === 1) {
+                    if (this.checked) {
+                        $('.chk-asiento').not(this).prop('checked', false).closest('.seat-option').removeClass('selected');
+                        $(this).closest('.seat-option').addClass('selected');
+                    } else {
+                        $(this).closest('.seat-option').removeClass('selected');
+                    }
+                } else {
+                    // Si son varios pasajeros, no deja marcar más de la cuenta
+                    if (seleccionados.length > maxPasajeros) {
+                        this.checked = false;
+                        alert('Solo puede seleccionar un máximo de ' + maxPasajeros + ' asiento(s).');
+                        return;
+                    }
+                    if (this.checked) {
+                        $(this).closest('.seat-option').addClass('selected');
+                    } else {
+                        $(this).closest('.seat-option').removeClass('selected');
+                    }
+                }
+
+                $('#contadorSeleccionados').text($('.chk-asiento:checked').length);
+            });
+
+            $('#formSeleccionAsientos').on('submit', function (e) {
+                var cantidad = $('.chk-asiento:checked').length;
+                if (cantidad !== maxPasajeros) {
+                    e.preventDefault();
+                    alert('Debe seleccionar exactamente ' + maxPasajeros + ' asiento(s) para continuar.');
+                }
+            });
+        });
+    </script>
+}

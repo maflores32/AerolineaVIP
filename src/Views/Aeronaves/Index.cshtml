@@ -1,0 +1,49 @@
+﻿@model IEnumerable<AerolineaVIP.Models.Aeronave>
+
+@{
+    ViewBag.Title = "Aeronaves";
+}
+
+<h2>Mantenimiento de Aeronaves</h2>
+
+<p>
+    @if (User.IsInRole("Create"))
+    {
+        @Html.ActionLink("Crear Nueva Aeronave", "Create", null, new { @class = "btn btn-primary btn-sm" })
+    }
+</p>
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Matrícula</th>
+            <th>Modelo</th>
+            <th>Fabricante</th>
+            <th>Capacidad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><strong>@Html.DisplayFor(modelItem => item.Matricula)</strong></td>
+                <td>@Html.DisplayFor(modelItem => item.ModeloAeronave.Nombre)</td>
+                <td>@Html.DisplayFor(modelItem => item.ModeloAeronave.Fabricante)</td>
+                <td>@Html.DisplayFor(modelItem => item.ModeloAeronave.CapacidadAsientos) asientos</td>
+                <td><span class="badge @(item.EstadoAeronaveCodigo == "DISPONIBLE" ? "bg-success" : "bg-danger")">@item.EstadoAeronaveCodigo</span></td>
+                <td>
+                    @if (User.IsInRole("Edit"))
+                    {
+                        @Html.ActionLink("Editar", "Edit", new { id = item.AeronaveId }, new { @class = "btn btn-sm btn-outline-secondary" })
+                    }
+                    @Html.ActionLink("Detalles", "Details", new { id = item.AeronaveId }, new { @class = "btn btn-sm btn-outline-info" })
+                    @if (User.IsInRole("Delete"))
+                    {
+                        @Html.ActionLink("Eliminar", "Delete", new { id = item.AeronaveId }, new { @class = "btn btn-sm btn-outline-danger" })
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

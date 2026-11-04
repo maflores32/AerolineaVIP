@@ -1,0 +1,101 @@
+﻿@model AerolineaVIP.Models.Compra
+@{
+    ViewBag.Title = "Compra Confirmada";
+    var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+    var pago = Model.Pagoes.FirstOrDefault();
+    var comprobanteFactura = Model.Comprobantes.FirstOrDefault(c => c.TipoComprobanteCodigo == "FACTURA");
+}
+
+<div class="card p-4 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-dark mb-1">PANTALLA 12</span>
+            <h2 class="mb-1 text-success">¡Compra Confirmada Exitosamente!</h2>
+            <p class="text-muted mb-0">Su pago simulado ha sido aprobado. Sus asientos están confirmados (color rojo en cabina).</p>
+        </div>
+        <span class="badge bg-success p-2 fs-6">PAGADA</span>
+    </div>
+    <hr />
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <h5>Detalle de la Transacción</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Código Reserva:</dt>
+                <dd class="col-sm-7"><strong class="fs-5 text-primary">@Model.Reserva.CodigoReserva</strong></dd>
+
+                <dt class="col-sm-5">Fecha de Compra:</dt>
+                <dd class="col-sm-7">@Model.FechaCompra.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                <dt class="col-sm-5">Total Pagado:</dt>
+                <dd class="col-sm-7"><strong class="text-success fs-5">@string.Format("{0:C2}", Model.Importe)</strong> (@Model.MonedaCodigo)</dd>
+
+                @if (pago != null)
+                {
+                    <dt class="col-sm-5">Operación:</dt>
+                    <dd class="col-sm-7">@pago.CodigoOperacion</dd>
+
+                    <dt class="col-sm-5">Tarjeta:</dt>
+                    <dd class="col-sm-7">@pago.MarcaTarjetaCodigo **** @pago.UltimosCuatroDigitos</dd>
+
+                    <dt class="col-sm-5">Titular:</dt>
+                    <dd class="col-sm-7">@pago.NombreTitular</dd>
+                }
+            </dl>
+        </div>
+
+        @if (vuelo != null)
+        {
+            <div class="col-md-6">
+                <h5>Detalle del Vuelo Confirmado</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Vuelo:</dt>
+                    <dd class="col-sm-8"><strong>@vuelo.CodigoVuelo</strong></dd>
+
+                    <dt class="col-sm-4">Ruta:</dt>
+                    <dd class="col-sm-8">@vuelo.CiudadOrigen &rarr; @vuelo.CiudadDestino</dd>
+
+                    <dt class="col-sm-4">Fecha y Hora:</dt>
+                    <dd class="col-sm-8">@vuelo.FechaOperacion.ToString("dd/MM/yyyy") a las @vuelo.HoraSalida.ToString(@"hh\:mm")</dd>
+                </dl>
+            </div>
+        }
+    </div>
+
+    <hr />
+    <h5>Boletos y Asientos Asignados</h5>
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Pasajero</th>
+                    <th>Identificación</th>
+                    <th>Asiento Asignado</th>
+                    <th>Estado</th>
+                    <th class="text-end">Importe</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var asig in Model.Reserva.ReservaPasajeroVueloes)
+                {
+                    <tr>
+                        <td><strong>@asig.Pasajero.Nombres @asig.Pasajero.Apellidos</strong></td>
+                        <td>@asig.Pasajero.TipoDocumentoCodigo: @asig.Pasajero.NumeroDocumento</td>
+                        <td><span class="badge bg-danger fs-6">Asiento #@asig.NumeroAsiento</span></td>
+                        <td><span class="badge bg-success">@asig.EstadoAsignacionCodigo</span></td>
+                        <td class="text-end">@string.Format("{0:C2}", asig.ImporteTramo)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        @Html.ActionLink("Ir a Mis Reservas", "MisReservas", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+
+        <div class="d-flex gap-2">
+            @Html.ActionLink("Ir a Check-in (PANTALLA 15) →", "Index", "CheckIn", new { codigoReserva = Model.Reserva.CodigoReserva }, new { @class = "btn btn-success" })
+            @Html.ActionLink("Ver Comprobantes (PANTALLA 16) →", "Index", "Comprobantes", new { codigoReserva = Model.Reserva.CodigoReserva }, new { @class = "btn btn-vip" })
+        </div>
+    </div>
+</div>

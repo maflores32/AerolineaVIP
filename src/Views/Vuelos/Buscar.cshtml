@@ -1,0 +1,65 @@
+﻿@{
+    ViewBag.Title = "Buscar vuelos";
+}
+
+<div class="card-aerolinea mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <span class="badge bg-dark mb-1">PANTALLA 05</span>
+            <h2 class="mb-1">Consulta y Búsqueda de Vuelos VIP</h2>
+            <p class="text-muted mb-0">Seleccione su ruta, fecha de viaje y número de pasajeros (capacidad máxima: 7 asientos por aeronave Embraer Phenom 300E).</p>
+        </div>
+    </div>
+    <hr />
+
+    @using (Html.BeginForm("Resultados", "Vuelos", FormMethod.Get))
+    {
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Aeropuerto de origen</label>
+                @Html.DropDownList("origen", null, "-- Todos los orígenes --", new { @class = "form-select" })
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Aeropuerto de destino</label>
+                @Html.DropDownList("destino", null, "-- Todos los destinos --", new { @class = "form-select" })
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Fecha de salida</label>
+                <input type="date" name="fecha" value="@ViewBag.fecha" class="form-control" />
+            </div>
+
+            <div class="col-md-1">
+                <label class="form-label fw-bold">Pasajeros</label>
+                <input type="number" name="pasajeros" value="@ViewBag.pasajeros" min="1" max="7" class="form-control" />
+            </div>
+
+            <div class="col-md-2 d-grid gap-2">
+                <button type="submit" class="btn btn-gold">Buscar vuelos</button>
+                @Html.ActionLink("Ver todos", "Resultados", "Vuelos", null, new { @class = "btn btn-outline-secondary btn-sm" })
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card-aerolinea h-100">
+            <h5>Rutas corporativas directas</h5>
+            <p class="text-muted mb-0">Conectamos Quito (UIO), Guayaquil (GYE), Cuenca (CUE) y Manta (MEC) con salidas ejecutivas diarias.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card-aerolinea h-100">
+            <h5>Flota Embraer Phenom 300E</h5>
+            <p class="text-muted mb-0">Cabina ejecutiva presurizada para 7 pasajeros con selección individual de asiento (1D a 4D).</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card-aerolinea h-100">
+            <h5>Tarifa transparente</h5>
+            <p class="text-muted mb-0">Visualice el precio base, impuestos (IVA 15%) y la disponibilidad real de cada vuelo antes de reservar.</p>
+        </div>
+    </div>
+</div>

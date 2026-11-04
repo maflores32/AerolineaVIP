@@ -1,0 +1,85 @@
+﻿@{
+    ViewBag.Title = "Datos de Pasajeros";
+    var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+    var infoAsientos = ViewBag.InfoAsientos as List<AerolineaVIP.Models.vw_EstadoAsientoVuelo> ?? new List<AerolineaVIP.Models.vw_EstadoAsientoVuelo>();
+    var tiposDoc = ViewBag.TiposDocumento as List<AerolineaVIP.Models.TipoDocumentoIdentidad> ?? new List<AerolineaVIP.Models.TipoDocumentoIdentidad>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 09</span>
+        <h2 class="mb-0">Registro de Pasajeros por Asiento</h2>
+        <p class="text-muted mb-0">Vuelo <strong>@vuelo.CodigoVuelo</strong>: @vuelo.CiudadOrigen (@vuelo.Origen) &rarr; @vuelo.CiudadDestino (@vuelo.Destino) · @vuelo.FechaOperacion.ToString("dd/MM/yyyy")</p>
+    </div>
+    @Html.ActionLink("← Cambiar asientos", "SeleccionAsiento", "Reservas", new { vueloId = vuelo.VueloId, pasajeros = infoAsientos.Count }, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@using (Html.BeginForm("GuardarReserva", "Reservas", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="vueloId" value="@vuelo.VueloId" />
+
+    for (int i = 0; i < infoAsientos.Count; i++)
+    {
+        var asiento = infoAsientos[i];
+        <input type="hidden" name="numeroAsiento" value="@asiento.NumeroAsiento" />
+
+        <div class="card p-3 shadow-sm mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Pasajero @(i + 1) — Asiento <span class="badge bg-success">@asiento.CodigoAsiento</span> (#@asiento.NumeroAsiento · @asiento.Ubicacion)</h5>
+                <span class="fw-bold text-primary">Tarifa: @string.Format("{0:C2}", vuelo.TarifaReferencial)</span>
+            </div>
+            <hr />
+
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Tipo de documento *</label>
+                    <select name="tipoDocumento" class="form-select" required>
+                        @foreach (var td in tiposDoc)
+                        {
+                            <option value="@td.Codigo">@td.Descripcion (@td.Codigo)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Número de documento *</label>
+                    <input type="text" name="numeroDocumento" class="form-control" required maxlength="20" placeholder="Ej. 1712345678" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Nombres *</label>
+                    <input type="text" name="nombres" class="form-control" required maxlength="80" placeholder="Nombres completos" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Apellidos *</label>
+                    <input type="text" name="apellidos" class="form-control" required maxlength="80" placeholder="Apellidos completos" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Fecha de nacimiento</label>
+                    <input type="date" name="fechaNacimiento" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Correo electrónico *</label>
+                    <input type="email" name="correo" class="form-control" required maxlength="120" placeholder="pasajero@correo.com" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Teléfono de contacto *</label>
+                    <input type="text" name="telefono" class="form-control" required maxlength="25" placeholder="Ej. 0991234567" />
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card p-3 shadow-sm d-flex flex-row justify-content-between align-items-center">
+        <div>
+            <span class="text-muted">Total estimado (@infoAsientos.Count pasajero(s)):</span>
+            <strong class="fs-4 ms-2">@string.Format("{0:C2}", vuelo.TarifaReferencial * infoAsientos.Count)</strong>
+        </div>
+        <button type="submit" class="btn btn-vip btn-lg">Confirmar Reserva &rarr;</button>
+    </div>
+}

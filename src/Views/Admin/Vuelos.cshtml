@@ -1,0 +1,118 @@
+﻿@model IEnumerable<AerolineaVIP.Models.vw_VueloDetalle>
+@{
+    ViewBag.Title = "Programación de Vuelos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 18</span>
+        <h2 class="mb-0">Programación Operativa de Vuelos</h2>
+        <p class="text-muted mb-0">Genere vuelos masivos mediante el procedimiento almacenado y gestione sus estados.</p>
+    </div>
+    @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@if (TempData["MensajeAdmin"] != null)
+{
+    <div class="alert alert-success">@TempData["MensajeAdmin"]</div>
+}
+@if (TempData["ErrorAdmin"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorAdmin"]</div>
+}
+
+<!-- Bloque para ejecutar el Stored Procedure dbo.usp_GenerarVuelos -->
+<div class="card p-3 shadow-sm mb-4 border-start border-4 border-primary">
+    <h5 class="card-title text-primary mb-2">Ejecutar Procedimiento Almacenado: usp_GenerarVuelos</h5>
+    <p class="small text-muted mb-3">Genera automáticamente los vuelos según las frecuencias semanales activas para el rango de fechas indicado.</p>
+
+    @using (Html.BeginForm("GenerarVuelos", "Admin", FormMethod.Post, new { @class = "row g-3 align-items-end" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Fecha Inicio:</label>
+            <input type="date" name="fechaInicio" class="form-control" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Fecha Fin:</label>
+            <input type="date" name="fechaFin" class="form-control" required value="@DateTime.Today.AddDays(14).ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Desea ejecutar dbo.usp_GenerarVuelos para este rango de fechas?');">
+                Ejecutar usp_GenerarVuelos
+            </button>
+        </div>
+    }
+</div>
+
+<!-- Filtros de búsqueda -->
+<div class="card p-3 shadow-sm mb-4">
+    @using (Html.BeginForm("Vuelos", "Admin", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
+    {
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Desde:</label>
+            <input type="date" name="fechaInicio" value="@ViewBag.FechaInicio" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Hasta:</label>
+            <input type="date" name="fechaFin" value="@ViewBag.FechaFin" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Estado:</label>
+            @Html.DropDownList("estado", (SelectList)ViewBag.Estados, "-- Todos --", new { @class = "form-select" })
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary flex-fill">Filtrar</button>
+            @Html.ActionLink("Limpiar", "Vuelos", "Admin", null, new { @class = "btn btn-outline-secondary" })
+        </div>
+    }
+</div>
+
+<!-- Tabla de vuelos -->
+<div class="card p-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Vuelo ID</th>
+                    <th>Código</th>
+                    <th>Ruta</th>
+                    <th>Fecha Operación</th>
+                    <th>Horario</th>
+                    <th>Estado</th>
+                    <th class="text-center">Cambiar Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    string colorBadge = item.EstadoVueloCodigo == "CONFIRMADO" ? "bg-success" :
+                                       (item.EstadoVueloCodigo == "PROGRAMADO" ? "bg-primary" :
+                                       (item.EstadoVueloCodigo == "CANCELADO" ? "bg-danger" : "bg-secondary"));
+                    <tr>
+                        <td><strong>#@item.VueloId</strong></td>
+                        <td><strong class="text-primary">@item.CodigoVuelo</strong></td>
+                        <td>@item.CiudadOrigen (@item.Origen) &rarr; @item.CiudadDestino (@item.Destino)</td>
+                        <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
+                        <td>@item.HoraSalida.ToString(@"hh\:mm") - @item.HoraLlegada.ToString(@"hh\:mm")</td>
+                        <td><span class="badge @colorBadge">@item.EstadoVueloCodigo</span></td>
+                        <td class="text-center">
+                            @using (Html.BeginForm("CambiarEstadoVuelo", "Admin", FormMethod.Post, new { @class = "d-inline-flex gap-1" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="vueloId" value="@item.VueloId" />
+                                <select name="nuevoEstado" class="form-select form-select-sm" style="width:130px;">
+                                    <option value="CONFIRMADO" @(item.EstadoVueloCodigo == "CONFIRMADO" ? "selected" : "")>CONFIRMADO</option>
+                                    <option value="PROGRAMADO" @(item.EstadoVueloCodigo == "PROGRAMADO" ? "selected" : "")>PROGRAMADO</option>
+                                    <option value="CANCELADO" @(item.EstadoVueloCodigo == "CANCELADO" ? "selected" : "")>CANCELADO</option>
+                                    <option value="COMPLETADO" @(item.EstadoVueloCodigo == "COMPLETADO" ? "selected" : "")>COMPLETADO</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-dark">Actualizar</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

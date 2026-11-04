@@ -1,0 +1,131 @@
+﻿@model AerolineaVIP.Models.Reserva
+@{
+    ViewBag.Title = "Gestionar Reserva";
+    var vuelo = ViewBag.Vuelo as AerolineaVIP.Models.vw_VueloDetalle;
+    var disponibles = ViewBag.AsientosDisponibles as List<AerolineaVIP.Models.vw_EstadoAsientoVuelo> ?? new List<AerolineaVIP.Models.vw_EstadoAsientoVuelo>();
+    decimal total = Model.ReservaPasajeroVueloes.Sum(x => x.ImporteTramo);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 14</span>
+        <h2 class="mb-0">Gestión de Reserva — @Model.CodigoReserva</h2>
+    </div>
+    @Html.ActionLink("← Volver a Mis Reservas", "MisReservas", "Reservas", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@if (TempData["MensajeGestion"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["MensajeGestion"]
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card p-3 shadow-sm mb-3">
+            <h4>Estado de la Reserva</h4>
+            <hr />
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Código:</dt>
+                <dd class="col-sm-7"><strong>@Model.CodigoReserva</strong></dd>
+
+                <dt class="col-sm-5">Estado actual:</dt>
+                <dd class="col-sm-7"><span class="badge bg-dark">@Model.EstadoReservaCodigo</span></dd>
+
+                <dt class="col-sm-5">Fecha creación:</dt>
+                <dd class="col-sm-7">@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                @if (vuelo != null)
+                {
+                    <dt class="col-sm-5">Vuelo:</dt>
+                    <dd class="col-sm-7"><strong>@vuelo.CodigoVuelo</strong> (@vuelo.Origen &rarr; @vuelo.Destino)</dd>
+
+                    <dt class="col-sm-5">Salida:</dt>
+                    <dd class="col-sm-7">@vuelo.FechaOperacion.ToString("dd/MM/yyyy") a las @vuelo.HoraSalida.ToString(@"hh\:mm")</dd>
+                }
+
+                <dt class="col-sm-5">Total:</dt>
+                <dd class="col-sm-7 text-success"><strong>@string.Format("{0:C2}", total)</strong></dd>
+            </dl>
+
+            <hr />
+            <div class="d-flex flex-wrap gap-2">
+                @if (Model.EstadoReservaCodigo == "PENDIENTE")
+                {
+                    @Html.ActionLink("Pagar Reserva Ahora", "Pagar", "Compras", new { reservaId = Model.ReservaId }, new { @class = "btn btn-vip" })
+                }
+                @if (Model.EstadoReservaCodigo == "CONFIRMADA")
+                {
+                    @Html.ActionLink("Ir a Check-in", "Index", "CheckIn", new { codigoReserva = Model.CodigoReserva }, new { @class = "btn btn-success" })
+                    @Html.ActionLink("Ver Comprobante", "Index", "Comprobantes", new { codigoReserva = Model.CodigoReserva }, new { @class = "btn btn-outline-primary" })
+                }
+                @if (Model.EstadoReservaCodigo != "CANCELADA")
+                {
+                    using (Html.BeginForm("CancelarReserva", "Reservas", FormMethod.Post, new { onsubmit = "return confirm('¿Está seguro de cancelar esta reserva y liberar sus asientos?');" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="reservaId" value="@Model.ReservaId" />
+                        <button type="submit" class="btn btn-outline-danger">Cancelar Reserva</button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card p-3 shadow-sm">
+            <h4>Pasajeros y Cambio de Asiento</h4>
+            <hr />
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Pasajero</th>
+                            <th>Documento</th>
+                            <th>Asiento Actual</th>
+                            <th>Cambiar Asiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var asig in Model.ReservaPasajeroVueloes)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@asig.Pasajero.Nombres @asig.Pasajero.Apellidos</strong><br />
+                                    <small class="text-muted">@asig.Pasajero.Correo</small>
+                                </td>
+                                <td>@asig.Pasajero.TipoDocumentoCodigo: @asig.Pasajero.NumeroDocumento</td>
+                                <td>
+                                    <span class="badge bg-primary">Asiento #@asig.NumeroAsiento</span><br />
+                                    <small class="text-muted">@asig.EstadoAsignacionCodigo</small>
+                                </td>
+                                <td>
+                                    @if (Model.EstadoReservaCodigo != "CANCELADA" && disponibles.Any())
+                                    {
+                                        using (Html.BeginForm("CambiarAsiento", "Reservas", FormMethod.Post, new { @class = "d-flex gap-1" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="asignacionId" value="@asig.AsignacionId" />
+                                            <select name="nuevoAsiento" class="form-select form-select-sm" style="width:130px;">
+                                                @foreach (var disp in disponibles)
+                                                {
+                                                    <option value="@disp.NumeroAsiento">@disp.CodigoAsiento (#@disp.NumeroAsiento)</option>
+                                                }
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-dark">Cambiar</button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Sin cambios disponibles</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

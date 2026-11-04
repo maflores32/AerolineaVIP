@@ -1,0 +1,188 @@
+﻿@model AerolineaVIP.Models.vw_VueloDetalle
+@{
+    ViewBag.Title = "Disponibilidad de Asientos";
+    var disp = ViewBag.Disponibilidad as AerolineaVIP.Models.vw_DisponibilidadVuelo;
+    var asientos = ViewBag.Asientos as List<AerolineaVIP.Models.vw_EstadoAsientoVuelo> ?? new List<AerolineaVIP.Models.vw_EstadoAsientoVuelo>();
+    int numPasajeros = ViewBag.Pasajeros != null ? (int)ViewBag.Pasajeros : 1;
+
+    int libres = disp != null && disp.Disponibles.HasValue ? disp.Disponibles.Value : 7;
+    int ocupados = disp != null ? disp.Ocupados : 0;
+}
+
+<style>
+    .cabin-box {
+        background: #f8fafc;
+        border: 2px solid #0b2545;
+        border-radius: 40px 40px 18px 18px;
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 25px 30px;
+        box-shadow: 0 6px 18px rgba(11, 37, 69, 0.12);
+    }
+
+    .cockpit-header {
+        text-align: center;
+        border-bottom: 2px dashed #cbd5e1;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        color: #0b2545;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .seat-card {
+        width: 110px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        text-align: center;
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .seat-verde {
+        background-color: #198754;
+        border: 2px solid #146c43;
+    }
+
+    .seat-morado {
+        background-color: #6f42c1;
+        border: 2px solid #59359a;
+    }
+
+    .seat-rojo {
+        background-color: #dc3545;
+        border: 2px solid #b02a37;
+    }
+
+    .aisle-label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 07</span>
+        <h2 class="mb-0">Disponibilidad y Mapa de Cabina — Vuelo @Model.CodigoVuelo</h2>
+    </div>
+    @Html.ActionLink("← Volver a resultados", "Resultados", "Vuelos", new { fecha = Model.FechaOperacion.ToString("yyyy-MM-dd"), pasajeros = numPasajeros }, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="row g-4">
+    <!-- Columna izquierda: Resumen del vuelo y tarifas -->
+    <div class="col-md-5">
+        <div class="card p-3 shadow-sm mb-3">
+            <h4>Detalle de la Operación</h4>
+            <hr />
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Código de vuelo:</dt>
+                <dd class="col-sm-7"><strong>@Model.CodigoVuelo</strong> (@Model.EstadoVueloCodigo)</dd>
+
+                <dt class="col-sm-5">Origen:</dt>
+                <dd class="col-sm-7">@Model.CiudadOrigen (@Model.Origen)</dd>
+
+                <dt class="col-sm-5">Destino:</dt>
+                <dd class="col-sm-7">@Model.CiudadDestino (@Model.Destino)</dd>
+
+                <dt class="col-sm-5">Fecha de vuelo:</dt>
+                <dd class="col-sm-7">@Model.FechaOperacion.ToString("dd/MM/yyyy")</dd>
+
+                <dt class="col-sm-5">Horario:</dt>
+                <dd class="col-sm-7">@Model.HoraSalida.ToString(@"hh\:mm") a @Model.HoraLlegada.ToString(@"hh\:mm")</dd>
+
+                <dt class="col-sm-5">Tarifa ref.:</dt>
+                <dd class="col-sm-7 text-success"><strong>@string.Format("{0:C2}", Model.TarifaReferencial)</strong></dd>
+            </dl>
+        </div>
+
+        <div class="card p-3 shadow-sm">
+            <h5>Resumen de Ocupación (Capacidad: 7)</h5>
+            <div class="d-flex gap-2 my-3">
+                <span class="badge bg-success p-2 flex-fill text-center">Disponibles: @libres</span>
+                <span class="badge bg-secondary p-2 flex-fill text-center">Ocupados: @ocupados</span>
+            </div>
+
+            @if (libres >= numPasajeros && libres > 0)
+            {
+                <div class="d-grid">
+                    @Html.ActionLink("Continuar a Selección de Asientos →", "SeleccionAsiento", "Reservas", new { vueloId = Model.VueloId, pasajeros = numPasajeros }, new { @class = "btn btn-vip btn-lg" })
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger mb-0">
+                    No hay suficientes asientos disponibles en este vuelo para continuar con la reserva.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Columna derecha: Diagrama de cabina Embraer Phenom 300E (7 asientos) -->
+    <div class="col-md-7">
+        <div class="card p-3 shadow-sm">
+            <h4 class="text-center mb-1">Distribución de Cabina — Embraer Phenom 300E</h4>
+            <p class="text-center text-muted small mb-3">4 Filas Ejecutivas (1D individual + filas 2 a 4 dobles)</p>
+
+            <!-- Leyenda de colores según Wireframe 07 y vista vw_EstadoAsientoVuelo -->
+            <div class="d-flex justify-content-center gap-4 mb-4">
+                <span><span class="badge bg-success">&nbsp;&nbsp;</span> Verde: Disponible</span>
+                <span><span class="badge" style="background-color:#6f42c1;">&nbsp;&nbsp;</span> Morado: Reservado</span>
+                <span><span class="badge bg-danger">&nbsp;&nbsp;</span> Rojo: Ocupado / Vendido</span>
+            </div>
+
+            <div class="cabin-box">
+                <div class="cockpit-header">
+                    ▲ CABINA DE MANDO (COCKPIT) ▲
+                </div>
+
+                @for (byte fila = 1; fila <= 4; fila++)
+                {
+                    var asientoIzq = asientos.FirstOrDefault(a => a.Fila == fila && a.Lado != null && a.Lado.Trim() == "I");
+                    var asientoDer = asientos.FirstOrDefault(a => a.Fila == fila && a.Lado != null && a.Lado.Trim() == "D");
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <!-- Lado Izquierdo -->
+                        <div>
+                            @if (asientoIzq != null)
+                            {
+                                string colorClass = asientoIzq.ColorEstado == "Verde" ? "seat-verde" :
+                                                   (asientoIzq.ColorEstado == "Morado" ? "seat-morado" : "seat-rojo");
+                                <div class="seat-card @colorClass">
+                                    <div class="fs-5">@asientoIzq.CodigoAsiento</div>
+                                    <small>@asientoIzq.EstadoVisual</small>
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="width:110px; text-align:center;" class="text-muted small">
+                                    <em>Acceso / Galley</em>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Pasillo central -->
+                        <div class="aisle-label">
+                            Fila @fila
+                        </div>
+
+                        <!-- Lado Derecho -->
+                        <div>
+                            @if (asientoDer != null)
+                            {
+                                string colorClass = asientoDer.ColorEstado == "Verde" ? "seat-verde" :
+                                                   (asientoDer.ColorEstado == "Morado" ? "seat-morado" : "seat-rojo");
+                                <div class="seat-card @colorClass">
+                                    <div class="fs-5">@asientoDer.CodigoAsiento</div>
+                                    <small>@asientoDer.EstadoVisual</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,157 @@
+﻿@model AerolineaVIP.Controllers.GestionAdminViewModel
+
+@{
+    ViewBag.Title = "Gestión de Usuarios, Pasajeros y Reservas";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-dark mb-1">PANTALLA 20</span>
+        <h2 class="mb-0">Gestión de Operaciones</h2>
+        <p class="text-muted mb-0">Administre usuarios, pasajeros y reservas del sistema.</p>
+    </div>
+    @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<!-- Pestañas de Navegación (Según Wireframe) -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActivo == "usuarios" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "usuarios" })">Usuarios</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActivo == "pasajeros" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "pasajeros" })">Pasajeros</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActivo == "reservas" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "reservas" })">Reservas</a>
+    </li>
+</ul>
+
+<!-- Barra de Filtros y Búsqueda (Según Wireframe) -->
+<div class="card p-3 shadow-sm mb-3">
+    @using (Html.BeginForm("Gestion", "Admin", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
+    {
+        <input type="hidden" name="tab" value="@Model.TabActivo" />
+
+        <div class="col-md-5">
+            <label class="form-label text-muted small mb-1">Buscar (opcional)</label>
+            <input type="text" name="buscar" class="form-control" placeholder="usuario, correo..." value="@Model.Buscar" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label text-muted small mb-1">Rol (opcional)</label>
+            <select class="form-select">
+                <option value="">Todos</option>
+                <option value="SuperUsuario">SuperUsuario</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Cliente">Cliente</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-dark w-100">Consultar</button>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-dark w-100">Crear</button>
+        </div>
+    }
+</div>
+
+<!-- Tabla de Resultados (Adaptada a la pestaña activa) -->
+<div class="card p-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    @if (Model.TabActivo == "usuarios")
+                    {
+                        <th>Usuario</th>
+                        <th>Documento / Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    }
+                    else if (Model.TabActivo == "pasajeros")
+                    {
+                        <th>Nombres</th>
+                        <th>Apellidos</th>
+                        <th>Documento</th>
+                        <th>Teléfono</th>
+                        <th>Acciones</th>
+                    }
+                    else if (Model.TabActivo == "reservas")
+                    {
+                        <th>Código</th>
+                        <th>Fecha de Viaje</th>
+                        <th>Estado Reserva</th>
+                        <th>Estado Compra</th>
+                        <th>Acciones</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.TabActivo == "usuarios" && Model.Usuarios != null && Model.Usuarios.Any())
+                {
+                    foreach (var user in Model.Usuarios)
+                    {
+                        <tr>
+                            <td><strong>@user.Nombres @user.Apellidos</strong></td>
+                            <td>@user.NumeroDocumento</td>
+                            <td><span class="badge bg-info text-dark">Cliente</span></td>
+                            <td><span class="badge bg-success">Activo</span></td>
+                            <td>
+                                <a href="#" class="text-decoration-none">Detalles</a> |
+                                <a href="#" class="text-decoration-none">Editar</a> |
+                                <a href="#" class="text-decoration-none text-primary">Asignar rol</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else if (Model.TabActivo == "pasajeros" && Model.Pasajeros != null && Model.Pasajeros.Any())
+                {
+                    foreach (var p in Model.Pasajeros)
+                    {
+                        <tr>
+                            <td>@p.Nombres</td>
+                            <td>@p.Apellidos</td>
+                            <td>@p.NumeroDocumento</td>
+                            <td>@p.Telefono</td>
+                            <td>
+                                <a href="#" class="text-decoration-none">Editar</a> |
+                                <a href="#" class="text-decoration-none">Historial</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else if (Model.TabActivo == "reservas" && Model.Reservas != null && Model.Reservas.Any())
+                {
+                    foreach (var r in Model.Reservas)
+                    {
+                        <tr>
+                            <td><strong>@r.CodigoReserva</strong></td>
+                            <td>@r.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                            <td><span class="badge bg-warning text-dark">@r.EstadoReservaCodigo</span></td>
+                            <td><span class="badge bg-secondary">Sin compra</span></td>
+                            <td>
+                                <a href="#" class="text-decoration-none">Ver detalle</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No se encontraron registros para los filtros seleccionados.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Mensaje de advertencia de roles (Según Wireframe) -->
+<div class="alert alert-danger mt-3 d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div>
+        <strong>Error de acceso:</strong> Solo el SuperUsuario puede asignar roles.
+    </div>
+</div>

@@ -1,0 +1,114 @@
+﻿/* Set padding to keep content from hitting the edges */
+.body-content {
+    margin-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+/* Diseño propio Aerolínea VIP */
+.navbar.bg-dark {
+    background-color: #0b2545 !important;
+    border-bottom: 3px solid #c9a227;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: .08em;
+}
+
+.vip-hero {
+    background: linear-gradient(135deg, #0b2545 0%, #13315c 100%);
+    color: #ffffff;
+    padding: 3rem 2rem 5rem;
+    border-radius: .75rem;
+}
+
+    .vip-hero h1 {
+        font-weight: 700;
+    }
+
+    .vip-hero p {
+        color: #d9e2ef;
+        font-size: 1.15rem;
+        margin-bottom: 0;
+    }
+
+.vip-buscador {
+    background: #ffffff;
+    border-radius: .75rem;
+    padding: 1.5rem;
+    margin: -3.5rem 1rem 0;
+    box-shadow: 0 8px 24px rgba(11, 37, 69, .18);
+    border-top: 4px solid #c9a227;
+}
+
+    .vip-buscador input,
+    .vip-buscador select {
+        max-width: 100%;
+    }
+
+.vip-error {
+    color: #b42318;
+    font-size: .875rem;
+    min-height: 1.25rem;
+    margin-top: .25rem;
+}
+
+.vip-ayuda {
+    color: #6b7280;
+    font-size: .8rem;
+}
+
+.btn-vip {
+    background: #c9a227;
+    border-color: #c9a227;
+    color: #0b2545;
+    font-weight: 700;
+}
+
+    .btn-vip:hover,
+    .btn-vip:focus {
+        background: #b08d1f;
+        border-color: #b08d1f;
+        color: #0b2545;
+    }
+
+    .btn-vip:disabled {
+        background: #d6d3c4;
+        border-color: #d6d3c4;
+        color: #6b7280;
+    }
+
+.vip-aviso {
+    background: #f3f4f6;
+    border-left: 4px solid #0b2545;
+    padding: .75rem 1rem;
+    margin: 1.25rem 0 0;
+    font-size: .9rem;
+}
+
+.vip-destino {
+    background: #f3f4f6;
+    border-radius: .5rem;
+    padding: 1.25rem;
+    height: 100%;
+    border-bottom: 3px solid #c9a227;
+}
+
+    .vip-destino h3 {
+        color: #0b2545;
+    }
