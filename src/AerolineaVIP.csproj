@@ -209,6 +209,7 @@
     <Compile Include="Models\EntityValidationMetadata.cs" />
     <Compile Include="Models\CatalogDomainRules.cs" />
     <Compile Include="Models\IdentityDocumentRules.cs" />
+    <Compile Include="Models\ReservaViewModels.cs" />
     <Compile Include="Models\VueloSearchFilter.cs" />
     <Compile Include="Models\Aeropuerto.cs">
       <DependentUpon>AerolineaVIP_Model.tt</DependentUpon>

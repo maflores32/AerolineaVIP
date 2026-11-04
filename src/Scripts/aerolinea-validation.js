@@ -24,7 +24,7 @@
 
     $.validator.addMethod("ecuadorianCedula", function (value, element) {
         var $card = $(element).closest(".card");
-        if ($card.find("[name='tipoDocumento']").val() !== "CEDULA") {
+        if ($card.find("[name='tipoDocumento'], [name$='.TipoDocumento']").val() !== "CEDULA") {
             return true;
         }
         if (!/^\d{10}$/.test(value)) {
@@ -83,7 +83,7 @@
         });
 
         $("form[data-validate-passengers]").each(function () {
-            $(this).find("[name='numeroDocumento']").each(function () {
+            $(this).find("[name='numeroDocumento'], [name$='.NumeroDocumento']").each(function () {
                 $(this).rules("add", {
                     ecuadorianCedula: true,
                     messages: { ecuadorianCedula: "Ingrese una cédula ecuatoriana válida." }

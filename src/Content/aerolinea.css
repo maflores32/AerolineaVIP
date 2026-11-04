@@ -31,6 +31,12 @@ body {
     font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
 }
 
+.vip-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 input, select, textarea {
     max-width: 100%;
 }
@@ -60,6 +66,30 @@ input, select, textarea {
     border-bottom: 3px solid var(--vip-dorado);
 }
 
+.vip-navbar .container {
+    min-height: 4.25rem;
+}
+
+.vip-navbar .navbar-brand,
+.vip-navbar .navbar-nav .nav-link {
+    color: #ffffff;
+}
+
+.vip-navbar .navbar-brand:hover,
+.vip-navbar .navbar-nav .nav-link:hover,
+.vip-navbar .navbar-nav .nav-link:focus {
+    color: var(--vip-dorado);
+}
+
+.vip-navbar .navbar-collapse > .navbar-nav:last-child,
+.vip-navbar #logoutForm {
+    margin-left: auto;
+}
+
+.vip-navbar #logoutForm {
+    margin-bottom: 0;
+}
+
 .vip-marca {
     font-weight: 700;
     letter-spacing: .12em;
@@ -69,6 +99,39 @@ input, select, textarea {
         color: var(--vip-dorado);
     }
 
+.vip-content {
+    flex: 1 0 auto;
+    margin-top: 1.75rem;
+    margin-bottom: 2rem;
+}
+
+.vip-footer p {
+    margin: 0;
+}
+
+.card-aerolinea {
+    padding: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-top: 4px solid var(--vip-dorado);
+    border-radius: .75rem;
+    box-shadow: 0 8px 24px rgba(11, 37, 69, .1);
+}
+
+.btn-gold {
+    background: var(--vip-dorado);
+    border-color: var(--vip-dorado);
+    color: var(--vip-azul);
+    font-weight: 700;
+}
+
+.btn-gold:hover,
+.btn-gold:focus {
+    background: #b08d1f;
+    border-color: #b08d1f;
+    color: var(--vip-azul);
+}
+
 .vip-nav-registro {
     color: var(--vip-dorado) !important;
     font-weight: 600;
@@ -77,29 +140,39 @@ input, select, textarea {
 .vip-hero {
     background: linear-gradient(135deg, var(--vip-azul) 0%, var(--vip-azul-medio) 100%);
     color: #ffffff;
-    padding: 4rem 0 6rem;
+    padding: 5rem 2rem 8rem;
+    text-align: center; 
+    border-radius: 0.5rem; 
 }
 
 .vip-hero-titulo {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
 }
 
 .vip-hero-texto {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     color: #d9e2ef;
+    line-height: 1.6;
     margin-bottom: 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .vip-buscador-contenedor {
-    margin-top: -3.5rem;
+    margin-top: -4rem; 
+    position: relative;
+    z-index: 10;
 }
 
 .vip-buscador {
     background: #ffffff;
     border-radius: .75rem;
-    padding: 1.5rem;
-    box-shadow: 0 8px 24px rgba(11, 37, 69, .18);
+    padding: 2rem; 
+    box-shadow: 0 10px 30px rgba(11, 37, 69, .2); 
     border-top: 4px solid var(--vip-dorado);
 }
 
@@ -163,8 +236,20 @@ input, select, textarea {
 }
 
 @media (max-width: 576px) {
+    .vip-hero {
+        padding: 3rem 1.25rem 5rem;
+    }
+
     .vip-hero-titulo {
         font-size: 1.8rem;
+    }
+
+    .vip-navbar #logoutForm {
+        margin-left: 0;
+    }
+
+    .card-aerolinea {
+        padding: 1.25rem;
     }
 }
 

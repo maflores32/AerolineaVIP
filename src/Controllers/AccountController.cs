@@ -101,8 +101,9 @@ namespace AerolineaVIP.Controllers
             }
 
             await UserManager.ResetAccessFailedCountAsync(user.Id);
-            SessionAuthentication.SignIn(HttpContext, user.Id, user.UserName, await UserManager.GetRolesAsync(user.Id));
-            return RedirectToLocal(returnUrl);
+            var roles = await UserManager.GetRolesAsync(user.Id);
+            SessionAuthentication.SignIn(HttpContext, user.Id, user.UserName, roles);
+            return RedirectToLocal(returnUrl, roles.Contains("Administrador") || roles.Contains("SuperUsuario"));
         }
 
         //
@@ -396,11 +397,15 @@ namespace AerolineaVIP.Controllers
             }
         }
 
-        private ActionResult RedirectToLocal(string returnUrl)
+        private ActionResult RedirectToLocal(string returnUrl, bool isAdministrator)
         {
             if (Url.IsLocalUrl(returnUrl))
             {
                 return Redirect(returnUrl);
+            }
+            if (isAdministrator)
+            {
+                return RedirectToAction("Index", "Admin");
             }
             return RedirectToAction("Index", "Home");
         }

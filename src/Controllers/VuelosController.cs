@@ -27,7 +27,7 @@ namespace AerolineaVIP.Controllers
         // PANTALLA 6: /Vuelos/Resultados
         // ============================================================
         [AllowAnonymous]
-        public ActionResult Resultados(VueloSearchFilter filtro)
+        public ActionResult Resultados(VueloSearchFilter filtro, bool verTodos = false)
         {
             filtro = filtro ?? new VueloSearchFilter();
             filtro.NormalizarFiltros();
@@ -47,6 +47,17 @@ namespace AerolineaVIP.Controllers
                 ViewBag.DisponibilidadDict = new Dictionary<int, vw_DisponibilidadVuelo>();
                 ViewBag.Pasajeros = filtro.Pasajeros;
                 return View(new List<vw_VueloDetalle>());
+            }
+
+            if (verTodos)
+            {
+                filtro.Origen = null;
+                filtro.Destino = null;
+                filtro.Fecha = null;
+                ModelState.Remove(nameof(filtro.Origen));
+                ModelState.Remove(nameof(filtro.Destino));
+                ModelState.Remove(nameof(filtro.Fecha));
+                CargarCombosBusqueda(null, null, null, filtro.Pasajeros);
             }
 
             Dictionary<int, vw_DisponibilidadVuelo> disponibilidad;

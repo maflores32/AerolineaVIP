@@ -8,15 +8,15 @@
     @Scripts.Render("~/bundles/modernizr")
 
 </head>
-<body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark vip-navbar">
+<body class="vip-layout">
+    <nav class="navbar navbar-expand-sm navbar-dark vip-navbar">
         <div class="container">
-            @Html.ActionLink("Aerolínea VIP", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Alternar navegación" aria-controls="navbarSupportedContent"
+            @Html.ActionLink("Aerolínea VIP", "Index", "Home", new { area = "" }, new { @class = "navbar-brand vip-marca" })
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" title="Alternar navegación" aria-controls="navbarSupportedContent"
                     aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+            <div id="navbarSupportedContent" class="collapse navbar-collapse">
                 <ul class="navbar-nav flex-grow-1">
                     <li>@Html.ActionLink("Inicio", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
                     <li>@Html.ActionLink("Buscar vuelos", "Buscar", "Vuelos", new { area = "" }, new { @class = "nav-link" })</li>
@@ -55,13 +55,14 @@
             </div>
         </div>
     </nav>
-    <div class="container body-content">
+    <div class="container body-content vip-content">
         @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - Aerolínea VIP · Grupo05</p>
-        </footer>
     </div>
+    <footer class="vip-footer">
+        <div class="container">
+            <p>&copy; @DateTime.Now.Year - Aerolínea VIP · Grupo05</p>
+        </div>
+    </footer>
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")

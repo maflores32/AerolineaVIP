@@ -33,12 +33,12 @@
 
             <div class="col-md-1">
                 <label class="form-label fw-bold">Pasajeros</label>
-                <input type="number" name="Pasajeros" id="Pasajeros" value="@ViewBag.pasajeros" min="1" max="7" required="required" class="form-control" />
+                <input type="number" name="Pasajeros" id="Pasajeros" value="@ViewBag.pasajeros" min="1" max="7" step="1" required="required" class="form-control" />
             </div>
 
             <div class="col-md-2 d-grid gap-2">
                 <button type="submit" class="btn btn-gold">Buscar vuelos</button>
-                @Html.ActionLink("Ver todos", "Resultados", "Vuelos", null, new { @class = "btn btn-outline-secondary btn-sm" })
+                <button type="submit" name="verTodos" value="true" class="btn btn-outline-secondary btn-sm">Ver todos</button>
             </div>
         </div>
     }

@@ -9,7 +9,7 @@
     <div class="row">
         <div class="col-md-7">
             <section id="loginForm" class="card-aerolinea">
-                @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { role = "form" }))
+                @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { role = "form", target = "_self" }))
                 {
                     @Html.AntiForgeryToken()
                     <h4>Ingrese con su nombre de usuario y contraseña</h4>
@@ -31,7 +31,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="offset-md-4 col-md-8">
-                            <input type="submit" value="Iniciar sesión" class="btn btn-gold" />
+                            <input type="submit" value="Iniciar sesión" class="btn btn-dark" />
                         </div>
                     </div>
                     <hr />

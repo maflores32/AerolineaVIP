@@ -108,42 +108,57 @@ namespace AerolineaVIP.Controllers
                 .OrderBy(a => a.NumeroAsiento)
                 .ToList();
 
-            ViewBag.Vuelo = vuelo;
-            ViewBag.InfoAsientos = infoAsientos;
-            ViewBag.AsientosCsv = asientos;
-            ViewBag.TiposDocumento = db.TipoDocumentoIdentidads.OrderBy(t => t.Codigo).ToList();
+            if (infoAsientos.Count != numerosAsiento.Count || infoAsientos.Any(a => a.EstadoVisual != "DISPONIBLE"))
+            {
+                TempData["ErrorAsientos"] = "Uno o más asientos ya no están disponibles. Vuelva a elegirlos.";
+                return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId.Value, pasajeros = numerosAsiento.Count });
+            }
 
-            return View();
+            var modelo = new RegistroPasajerosViewModel
+            {
+                VueloId = vueloId.Value,
+                Vuelo = vuelo,
+                Pasajeros = infoAsientos.Select(a => new PasajeroReservaViewModel
+                {
+                    NumeroAsiento = a.NumeroAsiento,
+                    CodigoAsiento = a.CodigoAsiento,
+                    Ubicacion = a.Ubicacion
+                }).ToList()
+            };
+
+            PrepararVistaPasajeros(modelo, vuelo);
+            return View(modelo);
         }
 
         // POST: /Reservas/GuardarReserva
         [HttpPost]
         [ValidateAntiForgeryToken]
         [SessionAuthorize(Roles = "Cliente")]
-        public ActionResult GuardarReserva(
-            int vueloId,
-            int[] numeroAsiento,
-            string[] tipoDocumento,
-            string[] numeroDocumento,
-            string[] nombres,
-            string[] apellidos,
-            DateTime?[] fechaNacimiento,
-            string[] correo,
-            string[] telefono)
+        public ActionResult GuardarReserva(RegistroPasajerosViewModel modelo)
         {
-            var vuelo = db.vw_VueloDetalle.FirstOrDefault(v => v.VueloId == vueloId);
-            int cantidadPasajeros = numeroAsiento == null ? 0 : numeroAsiento.Length;
-            if (vuelo == null || cantidadPasajeros < 1 || cantidadPasajeros > 7 ||
-                tipoDocumento == null || tipoDocumento.Length != cantidadPasajeros ||
-                numeroDocumento == null || numeroDocumento.Length != cantidadPasajeros ||
-                nombres == null || nombres.Length != cantidadPasajeros ||
-                apellidos == null || apellidos.Length != cantidadPasajeros ||
-                correo == null || correo.Length != cantidadPasajeros ||
-                telefono == null || telefono.Length != cantidadPasajeros ||
-                (fechaNacimiento != null && fechaNacimiento.Length != cantidadPasajeros))
+            if (modelo == null || modelo.VueloId <= 0 || modelo.Pasajeros == null ||
+                modelo.Pasajeros.Count < 1 || modelo.Pasajeros.Count > 7 || modelo.Pasajeros.Any(p => p == null))
             {
                 TempData["ErrorAsientos"] = "Revise los datos de todos los pasajeros e inténtelo de nuevo.";
                 return RedirectToAction("Buscar", "Vuelos");
+            }
+
+            int vueloId = modelo.VueloId;
+            var pasajeros = modelo.Pasajeros;
+            int cantidadPasajeros = pasajeros.Count;
+            int[] numeroAsiento = pasajeros.Select(p => p.NumeroAsiento).ToArray();
+            string[] tipoDocumento = pasajeros.Select(p => p.TipoDocumento).ToArray();
+            string[] numeroDocumento = pasajeros.Select(p => p.NumeroDocumento).ToArray();
+            string[] nombres = pasajeros.Select(p => p.Nombres).ToArray();
+            string[] apellidos = pasajeros.Select(p => p.Apellidos).ToArray();
+            DateTime?[] fechaNacimiento = pasajeros.Select(p => p.FechaNacimiento).ToArray();
+            string[] correo = pasajeros.Select(p => p.Correo).ToArray();
+            string[] telefono = pasajeros.Select(p => p.Telefono).ToArray();
+
+            var vuelo = db.vw_VueloDetalle.FirstOrDefault(v => v.VueloId == vueloId);
+            if (vuelo == null)
+            {
+                return HttpNotFound();
             }
 
             DateTime salida = vuelo.FechaOperacion.Date.Add(vuelo.HoraSalida);
@@ -151,6 +166,12 @@ namespace AerolineaVIP.Controllers
             {
                 TempData["ErrorAsientos"] = "No se pueden reservar vuelos que ya salieron.";
                 return RedirectToAction("Buscar", "Vuelos");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                PrepararVistaPasajeros(modelo, vuelo);
+                return View("Pasajeros", modelo);
             }
 
             if (numeroAsiento.Distinct().Count() != cantidadPasajeros || numeroAsiento.Any(n => n < 1 || n > 7))
@@ -173,28 +194,22 @@ namespace AerolineaVIP.Controllers
             for (int i = 0; i < cantidadPasajeros; i++)
             {
                 string doc = (numeroDocumento[i] ?? "").Trim();
-                string nombre = (nombres[i] ?? "").Trim();
-                string apellido = (apellidos[i] ?? "").Trim();
-                string email = (correo[i] ?? "").Trim();
-                string telefonoPasajero = (telefono[i] ?? "").Trim();
-                bool emailValido;
-                try { emailValido = new System.Net.Mail.MailAddress(email).Address == email; }
-                catch { emailValido = false; }
                 bool documentoDuplicado = !documentosPasajeros.Add(tipoDocumento[i] + "|" + doc);
-                bool cedulaInvalida = string.Equals(tipoDocumento[i], "CEDULA", StringComparison.OrdinalIgnoreCase) &&
-                    !IdentityDocumentRules.EsCedulaEcuatorianaValida(doc);
-
-                if (documentoDuplicado || cedulaInvalida || string.IsNullOrWhiteSpace(tipoDocumento[i]) || !db.TipoDocumentoIdentidads.Any(t => t.Codigo == tipoDocumento[i]) ||
-                    doc.Length < 5 || doc.Length > 20 || doc.Any(c => !char.IsLetterOrDigit(c)) ||
-                    nombre.Length < 2 || nombre.Length > 80 || nombre.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\'') ||
-                    apellido.Length < 2 || apellido.Length > 80 || apellido.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\'') ||
-                    !emailValido || email.Length > 120 || telefonoPasajero.Length < 7 || telefonoPasajero.Length > 25 ||
-                    telefonoPasajero.Any(c => !char.IsDigit(c) && c != ' ' && c != '+' && c != '-' && c != '(' && c != ')') ||
-                    (fechaNacimiento != null && fechaNacimiento[i].HasValue && fechaNacimiento[i].Value.Date > DateTime.Today))
+                if (documentoDuplicado)
                 {
-                    TempData["ErrorAsientos"] = "Revise nombres, documento, fecha de nacimiento, correo y teléfono del pasajero " + (i + 1) + ".";
-                    return RedirectToAction("Pasajeros", new { vueloId = vueloId, asientos = string.Join(",", numeroAsiento) });
+                    ModelState.AddModelError("Pasajeros[" + i + "].NumeroDocumento", "Este documento ya está repetido en la reserva.");
                 }
+                string codigoTipoDocumento = tipoDocumento[i];
+                if (!db.TipoDocumentoIdentidads.Any(t => t.Codigo == codigoTipoDocumento))
+                {
+                    ModelState.AddModelError("Pasajeros[" + i + "].TipoDocumento", "Seleccione un tipo de documento válido.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                PrepararVistaPasajeros(modelo, vuelo);
+                return View("Pasajeros", modelo);
             }
 
             // Validar estado del vuelo
@@ -320,20 +335,42 @@ namespace AerolineaVIP.Controllers
 
                     return RedirectToAction("Confirmar", new { id = nuevaReserva.ReservaId });
                 }
-                catch (Exception ex)
+                catch
                 {
                     transaccion.Rollback(); // REVERTIR TODO EN CASO DE ERROR
-
-                    string errorAmigable = ex.Message;
-                    if (ex.InnerException != null && ex.InnerException.InnerException != null)
-                    {
-                        errorAmigable = ex.InnerException.InnerException.Message;
-                    }
-
-                    TempData["ErrorAsientos"] = "No se pudo completar la reserva: " + errorAmigable;
-                    return RedirectToAction("SeleccionAsiento", new { vueloId = vueloId, pasajeros = numeroAsiento.Length });
+                    ModelState.AddModelError("", "No se pudo completar la reserva. Revise los datos e inténtelo de nuevo.");
+                    PrepararVistaPasajeros(modelo, vuelo);
+                    return View("Pasajeros", modelo);
                 }
             }
+        }
+
+        private void PrepararVistaPasajeros(RegistroPasajerosViewModel modelo, vw_VueloDetalle vuelo)
+        {
+            modelo.Vuelo = vuelo;
+            var numerosAsiento = modelo.Pasajeros
+                .Where(p => p.NumeroAsiento >= 1 && p.NumeroAsiento <= 7)
+                .Select(p => (byte)p.NumeroAsiento)
+                .Distinct()
+                .ToList();
+            var asientos = db.vw_EstadoAsientoVuelo
+                .Where(a => a.VueloId == modelo.VueloId && numerosAsiento.Contains(a.NumeroAsiento))
+                .ToList();
+
+            foreach (var pasajero in modelo.Pasajeros)
+            {
+                var asiento = asientos.FirstOrDefault(a => a.NumeroAsiento == pasajero.NumeroAsiento);
+                if (asiento != null)
+                {
+                    pasajero.CodigoAsiento = asiento.CodigoAsiento;
+                    pasajero.Ubicacion = asiento.Ubicacion;
+                }
+            }
+
+            ViewBag.TiposDocumento = new SelectList(
+                db.TipoDocumentoIdentidads.OrderBy(t => t.Codigo).ToList(),
+                "Codigo",
+                "Descripcion");
         }
 
         // ============================================================
