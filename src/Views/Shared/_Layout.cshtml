@@ -8,27 +8,27 @@
     @Scripts.Render("~/bundles/modernizr")
 
 </head>
-<body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
+<body class="d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Navegación principal">
         <div class="container">
             @Html.ActionLink("Aerolínea VIP", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Alternar navegación" aria-controls="navbarSupportedContent"
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarPrincipal" title="Alternar navegación" aria-controls="navbarPrincipal"
                     aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+            <div id="navbarPrincipal" class="collapse navbar-collapse justify-content-between">
                 <ul class="navbar-nav flex-grow-1">
-                    <li>@Html.ActionLink("Inicio", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Vuelos", "Buscar", "Vuelos", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item">@Html.ActionLink("Inicio", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
+                    <li class="nav-item">@Html.ActionLink("Vuelos", "Buscar", "Vuelos", new { area = "" }, new { @class = "nav-link" })</li>
 
                     @if (User.Identity.IsAuthenticated)
                     {
                         @* CLIENTE: reservas, check-in y comprobantes *@
                         if (User.IsInRole("Cliente"))
                         {
-                            <li>@Html.ActionLink("Mis reservas", "MisReservas", "Reservas", new { area = "" }, new { @class = "nav-link" })</li>
-                            <li>@Html.ActionLink("Check-in", "Index", "CheckIn", new { area = "" }, new { @class = "nav-link" })</li>
-                            <li>@Html.ActionLink("Comprobantes", "Index", "Comprobantes", new { area = "" }, new { @class = "nav-link" })</li>
+                            <li class="nav-item">@Html.ActionLink("Mis reservas", "MisReservas", "Reservas", new { area = "" }, new { @class = "nav-link" })</li>
+                            <li class="nav-item">@Html.ActionLink("Check-in", "Index", "CheckIn", new { area = "" }, new { @class = "nav-link" })</li>
+                            <li class="nav-item">@Html.ActionLink("Comprobantes", "Index", "Comprobantes", new { area = "" }, new { @class = "nav-link" })</li>
                         }
 
                         @* ADMINISTRACION: SuperUsuario y Administrador *@
@@ -44,13 +44,13 @@
             </div>
         </div>
     </nav>
-    <div class="container body-content">
+    <div class="container body-content flex-grow-1">
         @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - Aerolínea VIP · Proyecto académico</p>
-        </footer>
     </div>
+    <footer class="container py-3 mt-auto">
+        <hr />
+        <p class="mb-0">&copy; @DateTime.Now.Year - Aerolínea VIP · Proyecto académico</p>
+    </footer>
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
