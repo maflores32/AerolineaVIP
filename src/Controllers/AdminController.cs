@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -20,25 +19,6 @@ namespace AerolineaVIP.Controllers
         private ApplicationUserManager UserManager
         {
             get { return HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>(); }
-        }
-
-        private bool ExisteConflictoAeronave(Vuelo vuelo, int aeronaveId)
-        {
-            DateTime salida = vuelo.FechaOperacion.Date.Add(vuelo.Frecuencia.HoraSalida);
-            DateTime llegada = vuelo.FechaOperacion.Date.Add(vuelo.Frecuencia.HoraLlegada);
-            var vuelosMismaAeronave = db.Vueloes
-                .Include(v => v.Frecuencia)
-                .Where(v => v.AeronaveId == aeronaveId && v.VueloId != vuelo.VueloId &&
-                            v.EstadoVueloCodigo != "CANCELADO" &&
-                            DbFunctions.TruncateTime(v.FechaOperacion) == vuelo.FechaOperacion.Date)
-                .ToList();
-
-            return vuelosMismaAeronave.Any(otro =>
-            {
-                DateTime otraSalida = otro.FechaOperacion.Date.Add(otro.Frecuencia.HoraSalida);
-                DateTime otraLlegada = otro.FechaOperacion.Date.Add(otro.Frecuencia.HoraLlegada);
-                return salida < otraLlegada.AddMinutes(45) && llegada.AddMinutes(45) > otraSalida;
-            });
         }
 
         // ============================================================
@@ -71,131 +51,7 @@ namespace AerolineaVIP.Controllers
         // GET: /Admin/Vuelos
         public ActionResult Vuelos(DateTime? fechaInicio, DateTime? fechaFin, string estado)
         {
-            if (fechaInicio.HasValue && fechaFin.HasValue && fechaInicio.Value.Date > fechaFin.Value.Date)
-            {
-                TempData["ErrorAdmin"] = "La fecha inicial debe ser anterior o igual a la fecha final.";
-                return RedirectToAction("Vuelos");
-            }
-
-            var query = db.vw_VueloDetalle.AsQueryable();
-
-            if (fechaInicio.HasValue)
-            {
-                DateTime fIni = fechaInicio.Value.Date;
-                query = query.Where(v => DbFunctions.TruncateTime(v.FechaOperacion) >= fIni);
-            }
-
-            if (fechaFin.HasValue)
-            {
-                DateTime fFin = fechaFin.Value.Date;
-                query = query.Where(v => DbFunctions.TruncateTime(v.FechaOperacion) <= fFin);
-            }
-
-            if (!string.IsNullOrEmpty(estado))
-            {
-                query = query.Where(v => v.EstadoVueloCodigo == estado);
-            }
-
-            var lista = query.OrderByDescending(v => v.FechaOperacion)
-                             .ThenBy(v => v.HoraSalida)
-                             .ToList();
-
-            ViewBag.Estados = new SelectList(db.EstadoVueloes.ToList(), "Codigo", "Descripcion", estado);
-            ViewBag.Aeronaves = new SelectList(db.Aeronaves.Where(a => a.EstadoAeronaveCodigo == "DISPONIBLE").OrderBy(a => a.Matricula).ToList(), "AeronaveId", "Matricula");
-            ViewBag.FechaInicio = fechaInicio.HasValue ? fechaInicio.Value.ToString("yyyy-MM-dd") : "";
-            ViewBag.FechaFin = fechaFin.HasValue ? fechaFin.Value.ToString("yyyy-MM-dd") : "";
-
-            return View(lista);
-        }
-
-        // POST: /Admin/GenerarVuelos (Invoca el Stored Procedure dbo.usp_GenerarVuelos)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [SessionAuthorize(Roles = "SuperUsuario, Administrador")]
-        public ActionResult GenerarVuelos(DateTime fechaInicio, DateTime fechaFin)
-        {
-            if (fechaInicio.Date < DateTime.Today || fechaInicio.Date > fechaFin.Date || fechaFin.Date > DateTime.Today.AddDays(365))
-            {
-                TempData["ErrorAdmin"] = "Use fechas futuras y un rango máximo de un año.";
-                return RedirectToAction("Vuelos");
-            }
-
-            try
-            {
-                var paramInicio = new SqlParameter("@FechaInicio", fechaInicio.Date);
-                var paramFin = new SqlParameter("@FechaFin", fechaFin.Date);
-
-                db.Database.ExecuteSqlCommand("EXEC dbo.usp_GenerarVuelos @FechaInicio, @FechaFin", paramInicio, paramFin);
-
-                TempData["MensajeAdmin"] = "Se ejecutó el procedimiento dbo.usp_GenerarVuelos exitosamente desde " + fechaInicio.ToString("dd/MM/yyyy") + " hasta " + fechaFin.ToString("dd/MM/yyyy") + ".";
-            }
-            catch (Exception ex)
-            {
-                string msg = ex.InnerException != null && ex.InnerException.InnerException != null
-                    ? ex.InnerException.InnerException.Message
-                    : ex.Message;
-                TempData["ErrorAdmin"] = "Error al generar vuelos: " + msg;
-            }
-
-            return RedirectToAction("Vuelos", new { fechaInicio = fechaInicio.ToString("yyyy-MM-dd"), fechaFin = fechaFin.ToString("yyyy-MM-dd") });
-        }
-
-        // POST: /Admin/CambiarEstadoVuelo
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [SessionAuthorize(Roles = "SuperUsuario, Administrador")]
-        public ActionResult CambiarEstadoVuelo(int vueloId, string nuevoEstado, int? aeronaveId)
-        {
-            var estadosPermitidos = new[] { "PROGRAMADO", "CONFIRMADO", "CANCELADO", "COMPLETADO" };
-            var vuelo = db.Vueloes.Include(v => v.Frecuencia).FirstOrDefault(v => v.VueloId == vueloId);
-            if (vuelo != null)
-            {
-                try
-                {
-                    if (!estadosPermitidos.Contains(nuevoEstado) || !db.EstadoVueloes.Any(e => e.Codigo == nuevoEstado))
-                    {
-                        TempData["ErrorAdmin"] = "Seleccione un estado de vuelo válido.";
-                        return RedirectToAction("Vuelos");
-                    }
-
-                    vuelo.EstadoVueloCodigo = nuevoEstado;
-                    if (aeronaveId.HasValue)
-                    {
-                        var aeronave = db.Aeronaves.Include(a => a.ModeloAeronave)
-                            .FirstOrDefault(a => a.AeronaveId == aeronaveId.Value && a.EstadoAeronaveCodigo == "DISPONIBLE");
-                        if (aeronave == null)
-                        {
-                            TempData["ErrorAdmin"] = "La aeronave seleccionada no está disponible.";
-                            return RedirectToAction("Vuelos");
-                        }
-
-                        int asignacionesActivas = db.ReservaPasajeroVueloes.Count(a => a.VueloId == vueloId &&
-                            (a.EstadoAsignacionCodigo == "PENDIENTE" || a.EstadoAsignacionCodigo == "CONFIRMADA"));
-                        if (aeronave.ModeloAeronave.CapacidadAsientos < asignacionesActivas || aeronave.ModeloAeronave.CapacidadAsientos > 7)
-                        {
-                            TempData["ErrorAdmin"] = "La capacidad de la aeronave no cubre las plazas asignadas al vuelo.";
-                            return RedirectToAction("Vuelos");
-                        }
-
-                        if (ExisteConflictoAeronave(vuelo, aeronaveId.Value))
-                        {
-                            TempData["ErrorAdmin"] = "La aeronave tiene otro vuelo incompatible; debe respetar al menos 45 minutos de preparación.";
-                            return RedirectToAction("Vuelos");
-                        }
-                        vuelo.AeronaveId = aeronaveId.Value;
-                    }
-                    db.SaveChanges();
-                    TempData["MensajeAdmin"] = "Vuelo #" + vueloId + " actualizado a estado '" + nuevoEstado + "'.";
-                }
-                catch (Exception ex)
-                {
-                    string msg = ex.InnerException != null && ex.InnerException.InnerException != null
-                        ? ex.InnerException.InnerException.Message
-                        : ex.Message;
-                    TempData["ErrorAdmin"] = "Error al actualizar estado del vuelo: " + msg;
-                }
-            }
-            return RedirectToAction("Vuelos");
+            return RedirectToAction("Programacion", "Vuelo", new { fechaInicio, fechaFin, estado });
         }
 
         // ============================================================
@@ -280,49 +136,12 @@ namespace AerolineaVIP.Controllers
         // GET: /Admin/Gestion
         public async System.Threading.Tasks.Task<ActionResult> Gestion(string tab = "usuarios", string buscar = "")
         {
-            // Mantenemos los ViewBags originales por si se usan en otra parte
-            ViewBag.TotalAeropuertos = db.Aeropuertoes.Count();
-            ViewBag.TotalRutas = db.Rutas.Count();
-            ViewBag.TotalFrecuencias = db.Frecuencias.Count();
-            ViewBag.TotalAeronaves = db.Aeronaves.Count();
-            ViewBag.TotalPasajeros = db.Pasajeroes.Count();
-            ViewBag.TotalReservas = db.Reservas.Count();
-            ViewBag.TotalCompras = db.Compras.Count();
-
             // Preparamos el ViewModel para la vista
             var model = new GestionAdminViewModel
             {
                 TabActivo = tab,
                 Buscar = buscar
             };
-
-            if (tab == "rutas")
-            {
-                model.Rutas = db.Rutas
-                    .Include(r => r.Aeropuerto)
-                    .Include(r => r.Aeropuerto1)
-                    .OrderBy(r => r.Aeropuerto.CodigoIATA)
-                    .ToList();
-                model.Frecuencias = db.Frecuencias
-                    .Include(f => f.Ruta.Aeropuerto)
-                    .Include(f => f.Ruta.Aeropuerto1)
-                    .OrderBy(f => f.RutaId)
-                    .ThenBy(f => f.DiaSemana)
-                    .ToList();
-                ViewBag.Aeropuertos = new SelectList(db.Aeropuertoes.Where(a => a.Activo).OrderBy(a => a.Localidad).ToList(), "AeropuertoId", "Nombre");
-                ViewBag.RutasActivas = db.Rutas
-                    .Include(r => r.Aeropuerto)
-                    .Include(r => r.Aeropuerto1)
-                    .Where(r => r.Activa)
-                    .OrderBy(r => r.RutaId)
-                    .ToList()
-                    .Select(r => new SelectListItem
-                    {
-                        Value = r.RutaId.ToString(),
-                        Text = r.Aeropuerto.CodigoIATA + " → " + r.Aeropuerto1.CodigoIATA
-                    }).ToList();
-                return View(model);
-            }
 
             // Lógica para las pestañas
             if (tab == "pasajeros")
@@ -428,150 +247,6 @@ namespace AerolineaVIP.Controllers
             return RedirectToAction("Gestion", new { tab = "usuarios" });
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult CrearRuta(RutaAdminViewModel model)
-        {
-            bool origenValido = db.Aeropuertoes.Any(a => a.AeropuertoId == model.AeropuertoOrigenId && a.Activo);
-            bool destinoValido = db.Aeropuertoes.Any(a => a.AeropuertoId == model.AeropuertoDestinoId && a.Activo);
-            if (!ModelState.IsValid || !origenValido || !destinoValido || model.AeropuertoOrigenId == model.AeropuertoDestinoId)
-            {
-                TempData["ErrorAdmin"] = "Seleccione dos aeropuertos activos distintos e ingrese una tarifa válida.";
-                return RedirectToAction("Gestion", new { tab = "rutas" });
-            }
-
-            bool duplicada = db.Rutas.Any(r => r.AeropuertoOrigenId == model.AeropuertoOrigenId && r.AeropuertoDestinoId == model.AeropuertoDestinoId);
-            if (duplicada)
-            {
-                TempData["ErrorAdmin"] = "Ya existe una ruta con ese origen y destino.";
-                return RedirectToAction("Gestion", new { tab = "rutas" });
-            }
-
-            db.Rutas.Add(new Ruta
-            {
-                AeropuertoOrigenId = model.AeropuertoOrigenId,
-                AeropuertoDestinoId = model.AeropuertoDestinoId,
-                TarifaReferencial = model.TarifaReferencial,
-                Activa = true
-            });
-            db.SaveChanges();
-            TempData["MensajeAdmin"] = "Ruta creada. Ahora agregue sus frecuencias para poder generar vuelos.";
-            return RedirectToAction("Gestion", new { tab = "rutas" });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult CrearFrecuencia(FrecuenciaAdminViewModel model)
-        {
-            bool rutaActiva = db.Rutas.Any(r => r.RutaId == model.RutaId && r.Activa);
-            if (!ModelState.IsValid || !rutaActiva || model.DiaSemana < 1 || model.DiaSemana > 7 || model.HoraLlegada <= model.HoraSalida)
-            {
-                TempData["ErrorAdmin"] = "Seleccione una ruta activa y horarios válidos; la llegada debe ser posterior a la salida.";
-                return RedirectToAction("Gestion", new { tab = "rutas" });
-            }
-
-            if (db.Frecuencias.Any(f => f.RutaId == model.RutaId && f.DiaSemana == model.DiaSemana))
-            {
-                TempData["ErrorAdmin"] = "La ruta ya tiene una frecuencia para ese día.";
-                return RedirectToAction("Gestion", new { tab = "rutas" });
-            }
-
-            db.Frecuencias.Add(new Frecuencia
-            {
-                RutaId = model.RutaId,
-                DiaSemana = model.DiaSemana,
-                HoraSalida = model.HoraSalida,
-                HoraLlegada = model.HoraLlegada,
-                Activa = true
-            });
-            db.SaveChanges();
-            TempData["MensajeAdmin"] = "Frecuencia creada. Genere los vuelos desde Programación de Vuelos.";
-            return RedirectToAction("Gestion", new { tab = "rutas" });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult CambiarEstadoRuta(int rutaId, bool activa)
-        {
-            var ruta = db.Rutas.Find(rutaId);
-            if (ruta == null)
-            {
-                return HttpNotFound();
-            }
-            ruta.Activa = activa;
-            if (!activa)
-            {
-                foreach (var frecuencia in db.Frecuencias.Where(f => f.RutaId == rutaId))
-                {
-                    frecuencia.Activa = false;
-                }
-            }
-            db.SaveChanges();
-            TempData["MensajeAdmin"] = "Estado de la ruta actualizado.";
-            return RedirectToAction("Gestion", new { tab = "rutas" });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult ActualizarTarifaRuta(int rutaId, decimal tarifaReferencial)
-        {
-            if (tarifaReferencial <= 0 || tarifaReferencial > 10000)
-            {
-                TempData["ErrorAdmin"] = "La tarifa debe ser mayor que cero y no superar USD 10 000.";
-                return RedirectToAction("Gestion", new { tab = "rutas" });
-            }
-            var ruta = db.Rutas.Find(rutaId);
-            if (ruta == null)
-            {
-                return HttpNotFound();
-            }
-            ruta.TarifaReferencial = tarifaReferencial;
-            db.SaveChanges();
-            TempData["MensajeAdmin"] = "Tarifa de ruta actualizada. Las reservas existentes conservan su importe.";
-            return RedirectToAction("Gestion", new { tab = "rutas" });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult CambiarEstadoFrecuencia(int frecuenciaId, bool activa)
-        {
-            var frecuencia = db.Frecuencias.Include(f => f.Ruta).FirstOrDefault(f => f.FrecuenciaId == frecuenciaId);
-            if (frecuencia == null)
-            {
-                return HttpNotFound();
-            }
-            frecuencia.Activa = activa && frecuencia.Ruta.Activa;
-            db.SaveChanges();
-            TempData["MensajeAdmin"] = frecuencia.Activa ? "Frecuencia activada." : "Frecuencia desactivada.";
-            return RedirectToAction("Gestion", new { tab = "rutas" });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult ActualizarFrecuencia(int frecuenciaId, byte diaSemana, TimeSpan horaSalida, TimeSpan horaLlegada)
-        {
-            var frecuencia = db.Frecuencias.Find(frecuenciaId);
-            if (frecuencia == null)
-            {
-                return HttpNotFound();
-            }
-            bool duplicada = db.Frecuencias.Any(f => f.FrecuenciaId != frecuenciaId && f.RutaId == frecuencia.RutaId && f.DiaSemana == diaSemana);
-            bool tieneVuelosFuturos = db.Vueloes.Any(v => v.FrecuenciaId == frecuenciaId && v.FechaOperacion >= DateTime.Today);
-            if (diaSemana < 1 || diaSemana > 7 || horaLlegada <= horaSalida || duplicada || tieneVuelosFuturos)
-            {
-                TempData["ErrorAdmin"] = tieneVuelosFuturos
-                    ? "No se puede cambiar una frecuencia con vuelos ya generados en el futuro. Desactívela y cree otra."
-                    : "Revise el día y los horarios; no debe existir otra frecuencia para ese día.";
-                return RedirectToAction("Gestion", new { tab = "rutas" });
-            }
-            frecuencia.DiaSemana = diaSemana;
-            frecuencia.HoraSalida = horaSalida;
-            frecuencia.HoraLlegada = horaLlegada;
-            db.SaveChanges();
-            TempData["MensajeAdmin"] = "Frecuencia actualizada.";
-            return RedirectToAction("Gestion", new { tab = "rutas" });
-        }
-
         // ============================================================
         // PANTALLA 21: REPORTES OPERATIVOS Y DE OCUPACIÓN
         // ============================================================
@@ -630,8 +305,6 @@ namespace AerolineaVIP.Controllers
         public bool EsSuperUsuario { get; set; }
         public List<Pasajero> Pasajeros { get; set; }
         public List<Reserva> Reservas { get; set; }
-        public List<Ruta> Rutas { get; set; }
-        public List<Frecuencia> Frecuencias { get; set; }
     }
 
     public class UsuarioAdminViewModel
@@ -650,33 +323,6 @@ namespace AerolineaVIP.Controllers
         public int AeronavesDisponibles { get; set; }
         public int RutasActivas { get; set; }
         public decimal IngresosMes { get; set; }
-    }
-
-    public class RutaAdminViewModel
-    {
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione un aeropuerto de origen.")]
-        public int AeropuertoOrigenId { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione un aeropuerto de destino.")]
-        public int AeropuertoDestinoId { get; set; }
-
-        [Range(typeof(decimal), "0.01", "10000", ErrorMessage = "La tarifa debe ser mayor que cero y menor o igual a 10 000.")]
-        public decimal TarifaReferencial { get; set; }
-    }
-
-    public class FrecuenciaAdminViewModel
-    {
-        [Range(1, int.MaxValue)]
-        public int RutaId { get; set; }
-
-        [Range(1, 7)]
-        public byte DiaSemana { get; set; }
-
-        [DataType(DataType.Time)]
-        public TimeSpan HoraSalida { get; set; }
-
-        [DataType(DataType.Time)]
-        public TimeSpan HoraLlegada { get; set; }
     }
 
     // Modelo auxiliar para el reporte de ocupación de la Pantalla 21

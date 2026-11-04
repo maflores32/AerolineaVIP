@@ -1,0 +1,51 @@
+﻿@model AerolineaVIP.Models.Vuelo
+
+@{
+    ViewBag.Title = "Detalle de vuelo";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Detalle del vuelo</h2>
+
+<div>
+    <h4>Vuelo</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.FechaOperacion)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.FechaOperacion)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Aeronave.Matricula)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Aeronave.Matricula)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.EstadoVuelo.Descripcion)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.EstadoVuelo.Descripcion)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Frecuencia.FrecuenciaId)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Frecuencia.FrecuenciaId)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Editar estado / aeronave", "Edit", new { id = Model.VueloId }) |
+    @Html.ActionLink("Volver al listado", "Index")
+</p>

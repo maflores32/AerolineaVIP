@@ -177,6 +177,47 @@ una reserva hay que iniciar sesión. La barra superior ofrece:
   - **Cliente:** Mis reservas, Check-in, Comprobantes.
   - **Administrador / SuperUsuario:** Administración.
 
+### Mapa de navegación
+
+El siguiente mapa resume los recorridos principales. Las pantallas de administración
+requieren rol `Administrador` o `SuperUsuario`; la compra y el área personal requieren
+rol `Cliente`; las tareas de atención requieren `Counter`.
+
+```mermaid
+flowchart TD
+	H[Inicio /Home/Index] --> B[Buscar vuelos /Vuelos/Buscar]
+	B --> R[Resultados /Vuelos/Resultados]
+	R --> D[Disponibilidad /Vuelos/Disponibilidad]
+	R -->|Cliente autenticado| S[Seleccionar asientos /Reservas/SeleccionAsiento]
+	S --> P[Datos pasajeros /Reservas/Pasajeros]
+	P --> C[Confirmar reserva /Reservas/Confirmar]
+	C -->|Confirmar y pagar| PG[Pago simulado /Compras/Pagar]
+	PG --> CF[Confirmación /Compras/Confirmacion]
+	C -->|Guardar pendiente| MR[Mis reservas /Reservas/MisReservas]
+	CF --> MR
+	MR --> MG[Gestionar reserva /Reservas/Gestionar]
+	MR --> PG
+	MR --> CI[Check-in /CheckIn/Index]
+	MR --> CO[Comprobantes /Comprobantes/Index]
+
+	subgraph Counter[Rol Counter]
+		CR[Gestión de reservas /Reservas/Gestion]
+		CC[Check-in y atención /CheckIn/Index]
+		CR --> CC
+	end
+
+	subgraph Admin[Administrador / SuperUsuario]
+		A[Panel /Admin/Index]
+		A --> AP[Aeropuertos /Aeropuerto/Index]
+		AP --> RT[Rutas /Ruta/Index]
+		RT --> FR[Frecuencias /Frecuencia/Index]
+		FR --> VP[Programación /Vuelo/Programacion]
+		A --> FL[Flota /Admin/Aeronaves]
+		A --> US[Usuarios y operaciones /Admin/Gestion]
+		A --> RP[Reportes /Admin/Reportes]
+	end
+```
+
 ### Compra de un vuelo
 
 1. **Pantalla 5 — Buscar vuelos** (`/Vuelos/Buscar`): elige origen, destino, fecha y

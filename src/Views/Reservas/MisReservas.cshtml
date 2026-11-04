@@ -11,7 +11,7 @@
         <h2 class="mb-0">@(esCounter ? "Gestión de reservas" : "Mis Reservas")</h2>
         <p class="text-muted mb-0">@(esCounter ? "Consulte reservas para atender a pasajeros." : "Consulte el estado de sus reservas activas, confirmadas o históricas.")</p>
     </div>
-    if (!esCounter)
+    @if (!esCounter)
     {
         @Html.ActionLink("+ Nueva Reserva", "Buscar", "Vuelos", null, new { @class = "btn btn-vip" })
     }

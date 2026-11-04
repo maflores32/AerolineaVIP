@@ -15,24 +15,24 @@
     </div>
     <hr />
 
-    @using (Html.BeginForm("Resultados", "Vuelos", FormMethod.Get))
+    @using (Html.BeginForm("Resultados", "Vuelos", FormMethod.Get, new { data_validate_search = "true" }))
     {
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-bold">Origen:</label>
-                @Html.DropDownList("origen", null, "-- Todos --", new { @class = "form-select" })
+                @Html.DropDownList("Origen", null, "-- Todos --", new { @class = "form-select", id = "Origen" })
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold">Destino:</label>
-                @Html.DropDownList("destino", null, "-- Todos --", new { @class = "form-select" })
+                @Html.DropDownList("Destino", null, "-- Todos --", new { @class = "form-select", id = "Destino" })
             </div>
             <div class="col-md-2">
                 <label class="form-label fw-bold">Fecha:</label>
-                <input type="date" name="fecha" value="@ViewBag.fecha" class="form-control" />
+                <input type="date" name="Fecha" id="Fecha" value="@ViewBag.fecha" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" />
             </div>
             <div class="col-md-2">
                 <label class="form-label fw-bold">Pasajeros (1-7):</label>
-                <input type="number" name="pasajeros" value="@numPasajeros" min="1" max="7" class="form-control" />
+                <input type="number" name="Pasajeros" id="Pasajeros" value="@numPasajeros" min="1" max="7" required="required" class="form-control" />
             </div>
             <div class="col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-vip flex-fill">Filtrar</button>
@@ -120,4 +120,8 @@ else
             </table>
         </div>
     </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
 }

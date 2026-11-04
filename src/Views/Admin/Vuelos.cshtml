@@ -6,10 +6,13 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <span class="badge bg-dark mb-1">PANTALLA 18</span>
-        <h2 class="mb-0">Programación Operativa de Vuelos</h2>
-        <p class="text-muted mb-0">Genere vuelos masivos mediante el procedimiento almacenado y gestione sus estados.</p>
+        <h2 class="mb-0">Programación operativa de vuelos</h2>
+        <p class="text-muted mb-0">Módulo exclusivo de administración para generar operaciones y gestionar estados; el buscador público está en «Buscar vuelos».</p>
     </div>
-    @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
+    <div class="d-flex gap-2">
+        @Html.ActionLink("Listado CRUD", "Index", "Vuelo", null, new { @class = "btn btn-outline-primary" })
+        @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
+    </div>
 </div>
 
 @if (TempData["MensajeAdmin"] != null)
@@ -21,25 +24,24 @@
     <div class="alert alert-danger">@TempData["ErrorAdmin"]</div>
 }
 
-<!-- Bloque para ejecutar el Stored Procedure dbo.usp_GenerarVuelos -->
 <div class="card p-3 shadow-sm mb-4 border-start border-4 border-primary">
-    <h5 class="card-title text-primary mb-2">Ejecutar Procedimiento Almacenado: usp_GenerarVuelos</h5>
-    <p class="small text-muted mb-3">Genera automáticamente los vuelos según las frecuencias semanales activas para el rango de fechas indicado.</p>
+    <h5 class="card-title text-primary mb-2">Generar vuelos desde las frecuencias activas</h5>
+    <p class="small text-muted mb-3">Crea las operaciones para el rango indicado usando las rutas, horarios y días configurados. El proceso evita duplicar vuelos ya generados.</p>
 
-    @using (Html.BeginForm("GenerarVuelos", "Admin", FormMethod.Post, new { @class = "row g-3 align-items-end" }))
+    @using (Html.BeginForm("GenerarVuelos", "Vuelo", FormMethod.Post, new { @class = "row g-3 align-items-end" }))
     {
         @Html.AntiForgeryToken()
         <div class="col-md-4">
-            <label class="form-label fw-bold">Fecha Inicio:</label>
+            <label class="form-label fw-bold">Fecha de inicio</label>
             <input type="date" name="fechaInicio" min="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.AddDays(365).ToString("yyyy-MM-dd")" class="form-control" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-bold">Fecha Fin:</label>
+            <label class="form-label fw-bold">Fecha de fin</label>
             <input type="date" name="fechaFin" min="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.AddDays(365).ToString("yyyy-MM-dd")" class="form-control" required value="@DateTime.Today.AddDays(14).ToString("yyyy-MM-dd")" />
         </div>
         <div class="col-md-4">
-            <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Desea ejecutar dbo.usp_GenerarVuelos para este rango de fechas?');">
-                Ejecutar usp_GenerarVuelos
+            <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Desea generar los vuelos para este rango de fechas?');">
+                Generar vuelos
             </button>
         </div>
     }
@@ -47,7 +49,7 @@
 
 <!-- Filtros de búsqueda -->
 <div class="card p-3 shadow-sm mb-4">
-    @using (Html.BeginForm("Vuelos", "Admin", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
+    @using (Html.BeginForm("Programacion", "Vuelo", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
     {
         <div class="col-md-3">
             <label class="form-label fw-bold">Desde:</label>
@@ -63,7 +65,7 @@
         </div>
         <div class="col-md-3 d-flex gap-2">
             <button type="submit" class="btn btn-secondary flex-fill">Filtrar</button>
-            @Html.ActionLink("Limpiar", "Vuelos", "Admin", null, new { @class = "btn btn-outline-secondary" })
+            @Html.ActionLink("Limpiar", "Programacion", "Vuelo", null, new { @class = "btn btn-outline-secondary" })
         </div>
     }
 </div>
@@ -97,7 +99,7 @@
                         <td>@item.HoraSalida.ToString(@"hh\:mm") - @item.HoraLlegada.ToString(@"hh\:mm")</td>
                         <td><span class="badge @colorBadge">@item.EstadoVueloCodigo</span></td>
                         <td class="text-center">
-                            @using (Html.BeginForm("CambiarEstadoVuelo", "Admin", FormMethod.Post, new { @class = "d-inline-flex gap-1" }))
+                            @using (Html.BeginForm("CambiarEstadoVuelo", "Vuelo", FormMethod.Post, new { @class = "d-inline-flex gap-1" }))
                             {
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="vueloId" value="@item.VueloId" />

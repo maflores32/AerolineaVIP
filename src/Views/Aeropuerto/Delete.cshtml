@@ -1,0 +1,34 @@
+@model AerolineaVIP.Models.Aeropuerto
+
+@{
+    ViewBag.Title = "Eliminar aeropuerto";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge bg-dark mb-1">CATÁLOGO DE OPERACIÓN</span>
+        <h2 class="mb-1">Eliminar aeropuerto</h2>
+        <p class="text-muted mb-0">Revise el registro antes de confirmar la eliminación.</p>
+    </div>
+    @Html.ActionLink("← Volver a aeropuertos", "Index", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="alert alert-warning" role="alert">Si el aeropuerto está asociado a una ruta, el sistema rechazará la operación; puede desactivarlo desde Editar.</div>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Código IATA</dt><dd class="col-sm-9">@Model.CodigoIATA</dd>
+            <dt class="col-sm-3">Nombre</dt><dd class="col-sm-9">@Model.Nombre</dd>
+            <dt class="col-sm-3">Localidad</dt><dd class="col-sm-9">@Model.Localidad</dd>
+            <dt class="col-sm-3">Estado</dt><dd class="col-sm-9">@(Model.Activo ? "Activo" : "Inactivo")</dd>
+        </dl>
+    </div>
+    <div class="card-footer bg-white">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">Eliminar aeropuerto</button>
+            @Html.ActionLink("Cancelar", "Index", null, new { @class = "btn btn-outline-secondary ms-2" })
+        }
+    </div>
+</div>

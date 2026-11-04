@@ -1,0 +1,56 @@
+@model AerolineaVIP.Models.Ruta
+
+@{
+    ViewBag.Title = "Editar ruta";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge bg-dark mb-1">CATÁLOGO DE OPERACIÓN</span>
+        <h2 class="mb-1">Editar ruta</h2>
+        <p class="text-muted mb-0">Actualice los aeropuertos, la tarifa y el estado de la ruta.</p>
+    </div>
+    @Html.ActionLink("← Volver a rutas", "Index", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @using (Html.BeginForm(null, null, FormMethod.Post, new { data_validate_route = "true" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+            @Html.HiddenFor(m => m.RutaId)
+            <div class="row g-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.AeropuertoOrigenId, new { @class = "form-label fw-semibold" })
+                    @Html.DropDownListFor(m => m.AeropuertoOrigenId, null, "Seleccione origen...", new { @class = "form-select", required = "required" })
+                    @Html.ValidationMessageFor(m => m.AeropuertoOrigenId, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.AeropuertoDestinoId, new { @class = "form-label fw-semibold" })
+                    @Html.DropDownListFor(m => m.AeropuertoDestinoId, null, "Seleccione destino...", new { @class = "form-select", required = "required" })
+                    @Html.ValidationMessageFor(m => m.AeropuertoDestinoId, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.TarifaReferencial, new { @class = "form-label fw-semibold" })
+                    @Html.TextBoxFor(m => m.TarifaReferencial, new { @class = "form-control", min = "0.01", max = "10000", step = "0.01", type = "number", required = "required" })
+                    @Html.ValidationMessageFor(m => m.TarifaReferencial, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        @Html.CheckBoxFor(m => m.Activa, new { @class = "form-check-input" })
+                        @Html.LabelFor(m => m.Activa, new { @class = "form-check-label" })
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-vip">Guardar cambios</button>
+                @Html.ActionLink("Cancelar", "Index", null, new { @class = "btn btn-outline-secondary" })
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

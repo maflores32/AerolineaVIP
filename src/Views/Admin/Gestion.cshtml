@@ -3,16 +3,11 @@
 @{
     ViewBag.Title = "Gestión de Usuarios, Pasajeros y Reservas";
 }
-                else if (Model.TabActivo == "usuarios" && Model.Cuentas != null)
-                {
-                    <tr><td colspan="@(Model.EsSuperUsuario ? 5 : 4)" class="text-center text-muted py-4">No se encontraron cuentas.</td></tr>
-                }
-
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <span class="badge bg-dark mb-1">PANTALLA 20</span>
         <h2 class="mb-0">Gestión de Operaciones</h2>
-        <p class="text-muted mb-0">Administre usuarios, pasajeros y reservas del sistema.</p>
+        <p class="text-muted mb-0">Administre cuentas, pasajeros, reservas y accesos a los catálogos.</p>
     </div>
     @Html.ActionLink("← Volver al Panel", "Index", "Admin", null, new { @class = "btn btn-outline-secondary" })
 </div>
@@ -29,7 +24,7 @@
         <a class="nav-link @(Model.TabActivo == "reservas" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "reservas" })">Reservas</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(Model.TabActivo == "rutas" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "rutas" })">Rutas y frecuencias</a>
+        <a class="nav-link @(Model.TabActivo == "rutas" ? "active fw-bold" : "")" href="@Url.Action("Gestion", new { tab = "rutas" })">Catálogos</a>
     </li>
 </ul>
 
@@ -44,128 +39,12 @@
 
 @if (Model.TabActivo == "rutas")
 {
-    <div class="row g-3 mb-4">
-        <div class="col-lg-6">
-            <div class="card p-3 h-100">
-                <h5>1. Crear ruta</h5>
-                @using (Html.BeginForm("CrearRuta", "Admin", FormMethod.Post))
-                {
-                    @Html.AntiForgeryToken()
-                    <div class="mb-2">
-                        <label class="form-label">Aeropuerto de origen</label>
-                        @Html.DropDownList("AeropuertoOrigenId", (SelectList)ViewBag.Aeropuertos, "Seleccione...", new { @class = "form-select", required = "required" })
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Aeropuerto de destino</label>
-                        @Html.DropDownList("AeropuertoDestinoId", (SelectList)ViewBag.Aeropuertos, "Seleccione...", new { @class = "form-select", required = "required" })
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tarifa referencial (USD)</label>
-                        <input type="number" name="TarifaReferencial" min="0.01" max="10000" step="0.01" class="form-control" required />
-                    </div>
-                    <button class="btn btn-primary" type="submit">Crear ruta</button>
-                }
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card p-3 h-100">
-                <h5>2. Añadir frecuencia</h5>
-                @using (Html.BeginForm("CrearFrecuencia", "Admin", FormMethod.Post))
-                {
-                    @Html.AntiForgeryToken()
-                    <div class="mb-2">
-                        <label class="form-label">Ruta activa</label>
-                        @Html.DropDownList("RutaId", (IEnumerable<System.Web.Mvc.SelectListItem>)ViewBag.RutasActivas, "Seleccione...", new { @class = "form-select", required = "required" })
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Día de operación</label>
-                        <select name="DiaSemana" class="form-select" required>
-                            <option value="">Seleccione...</option>
-                            <option value="1">Lunes</option><option value="2">Martes</option>
-                            <option value="3">Miércoles</option><option value="4">Jueves</option>
-                            <option value="5">Viernes</option><option value="6">Sábado</option><option value="7">Domingo</option>
-                        </select>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label class="form-label">Salida</label>
-                            <input type="time" name="HoraSalida" class="form-control" required />
-                        </div>
-                        <div class="col">
-                            <label class="form-label">Llegada</label>
-                            <input type="time" name="HoraLlegada" class="form-control" required />
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" type="submit">Guardar frecuencia</button>
-                }
-            </div>
-        </div>
+    <div class="row g-3">
+        <div class="col-md-4"><div class="card h-100 p-3"><h5>Aeropuertos</h5><p class="text-muted">Gestione aeropuertos y códigos IATA.</p>@Html.ActionLink("Gestionar aeropuertos", "Index", "Aeropuerto", null, new { @class = "btn btn-outline-primary mt-auto" })</div></div>
+        <div class="col-md-4"><div class="card h-100 p-3"><h5>Rutas</h5><p class="text-muted">Configure origen, destino y tarifa.</p>@Html.ActionLink("Gestionar rutas", "Index", "Ruta", null, new { @class = "btn btn-outline-primary mt-auto" })</div></div>
+        <div class="col-md-4"><div class="card h-100 p-3"><h5>Frecuencias</h5><p class="text-muted">Defina días y horarios de operación.</p>@Html.ActionLink("Gestionar frecuencias", "Index", "Frecuencia", null, new { @class = "btn btn-outline-primary mt-auto" })</div></div>
     </div>
-
-    <div class="card p-3 mb-4">
-        <h5>Rutas existentes</h5>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
-                <thead><tr><th>Origen</th><th>Destino</th><th>Tarifa USD</th><th>Estado</th><th>Acciones</th></tr></thead>
-                <tbody>
-                    @foreach (var ruta in Model.Rutas)
-                    {
-                        <tr>
-                            <td>@ruta.Aeropuerto.CodigoIATA · @ruta.Aeropuerto.Localidad</td>
-                            <td>@ruta.Aeropuerto1.CodigoIATA · @ruta.Aeropuerto1.Localidad</td>
-                            <td>
-                                @using (Html.BeginForm("ActualizarTarifaRuta", "Admin", FormMethod.Post, new { @class = "d-flex gap-1" }))
-                                {
-                                    @Html.AntiForgeryToken()<input type="hidden" name="rutaId" value="@ruta.RutaId" />
-                                    <input type="number" name="tarifaReferencial" value="@ruta.TarifaReferencial" min="0.01" max="10000" step="0.01" class="form-control form-control-sm" />
-                                    <button class="btn btn-sm btn-outline-primary" type="submit">Guardar</button>
-                                }
-                            </td>
-                            <td>@(ruta.Activa ? "Activa" : "Inactiva")</td>
-                            <td>
-                                @using (Html.BeginForm("CambiarEstadoRuta", "Admin", FormMethod.Post))
-                                {
-                                    @Html.AntiForgeryToken()<input type="hidden" name="rutaId" value="@ruta.RutaId" />
-                                    <input type="hidden" name="activa" value="@(!ruta.Activa)" />
-                                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(ruta.Activa ? "Desactivar" : "Activar")</button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card p-3">
-        <h5>Frecuencias existentes</h5>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
-                <thead><tr><th>Ruta</th><th>Día</th><th>Salida</th><th>Llegada</th><th>Estado</th><th>Acción</th></tr></thead>
-                <tbody>
-                    @foreach (var frecuencia in Model.Frecuencias)
-                    {
-                        <tr>
-                            <td>@frecuencia.Ruta.Aeropuerto.CodigoIATA → @frecuencia.Ruta.Aeropuerto1.CodigoIATA</td>
-                            <td>@frecuencia.DiaSemana</td>
-                            <td>@frecuencia.HoraSalida.ToString(@"hh\:mm")</td>
-                            <td>@frecuencia.HoraLlegada.ToString(@"hh\:mm")</td>
-                            <td>@(frecuencia.Activa ? "Activa" : "Inactiva")</td>
-                            <td>
-                                @using (Html.BeginForm("CambiarEstadoFrecuencia", "Admin", FormMethod.Post))
-                                {
-                                    @Html.AntiForgeryToken()<input type="hidden" name="frecuenciaId" value="@frecuencia.FrecuenciaId" />
-                                    <input type="hidden" name="activa" value="@(!frecuencia.Activa)" />
-                                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(frecuencia.Activa ? "Desactivar" : "Activar")</button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        <p class="small text-muted mb-0">Después de crear o activar rutas y frecuencias, genere los vuelos desde Programación de Vuelos.</p>
-    </div>
+    <div class="alert alert-info mt-3">Tras configurar rutas y frecuencias, utilice <strong>Programación de vuelos</strong> para generar las operaciones.</div>
 }
 
 <!-- Barra de Filtros y Búsqueda (Según Wireframe) -->
@@ -198,7 +77,7 @@
                         <th>Correo</th>
                         <th>Rol</th>
                         <th>Estado</th>
-                        @if (Model.EsSuperUsuario) { <th>Asignar rol</th> }
+                        if (Model.EsSuperUsuario) { <th>Asignar rol</th> }
                     }
                     else if (Model.TabActivo == "pasajeros")
                     {

@@ -181,8 +181,10 @@ namespace AerolineaVIP.Controllers
                 try { emailValido = new System.Net.Mail.MailAddress(email).Address == email; }
                 catch { emailValido = false; }
                 bool documentoDuplicado = !documentosPasajeros.Add(tipoDocumento[i] + "|" + doc);
+                bool cedulaInvalida = string.Equals(tipoDocumento[i], "CEDULA", StringComparison.OrdinalIgnoreCase) &&
+                    !IdentityDocumentRules.EsCedulaEcuatorianaValida(doc);
 
-                if (documentoDuplicado || string.IsNullOrWhiteSpace(tipoDocumento[i]) || !db.TipoDocumentoIdentidads.Any(t => t.Codigo == tipoDocumento[i]) ||
+                if (documentoDuplicado || cedulaInvalida || string.IsNullOrWhiteSpace(tipoDocumento[i]) || !db.TipoDocumentoIdentidads.Any(t => t.Codigo == tipoDocumento[i]) ||
                     doc.Length < 5 || doc.Length > 20 || doc.Any(c => !char.IsLetterOrDigit(c)) ||
                     nombre.Length < 2 || nombre.Length > 80 || nombre.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\'') ||
                     apellido.Length < 2 || apellido.Length > 80 || apellido.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\'') ||

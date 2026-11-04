@@ -15,9 +15,11 @@ namespace AerolineaVIP.Controllers
         // PANTALLA 5: /Vuelos/Buscar
         // ============================================================
         [AllowAnonymous]
-        public ActionResult Buscar(string origen, string destino, DateTime? fecha, int? pasajeros)
+        public ActionResult Buscar(VueloSearchFilter filtro)
         {
-            CargarCombosBusqueda(origen, destino, fecha, pasajeros);
+            filtro = filtro ?? new VueloSearchFilter();
+            filtro.NormalizarFiltros();
+            CargarCombosBusqueda(filtro.Origen, filtro.Destino, filtro.Fecha, filtro.Pasajeros);
             return View();
         }
 
@@ -25,68 +27,33 @@ namespace AerolineaVIP.Controllers
         // PANTALLA 6: /Vuelos/Resultados
         // ============================================================
         [AllowAnonymous]
-        public ActionResult Resultados(string origen, string destino, DateTime? fecha, int? pasajeros)
+        public ActionResult Resultados(VueloSearchFilter filtro)
         {
-            int numPasajeros = pasajeros ?? 1;
-            if (numPasajeros < 1) numPasajeros = 1;
-            if (numPasajeros > 7) numPasajeros = 7;
+            filtro = filtro ?? new VueloSearchFilter();
+            filtro.NormalizarFiltros();
+            CargarCombosBusqueda(filtro.Origen, filtro.Destino, filtro.Fecha, filtro.Pasajeros);
 
-            CargarCombosBusqueda(origen, destino, fecha, numPasajeros);
-
-            // Validación: Origen y Destino no pueden ser el mismo aeropuerto
-            if (!string.IsNullOrEmpty(origen) && !string.IsNullOrEmpty(destino) && origen == destino)
+            foreach (var error in filtro.Validar(db))
             {
-                ViewBag.ErrorBusqueda = "El aeropuerto de origen y el de destino no pueden ser el mismo.";
+                foreach (var member in error.MemberNames)
+                {
+                    ModelState.AddModelError(member, error.ErrorMessage);
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.ErrorBusqueda = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 ViewBag.DisponibilidadDict = new Dictionary<int, vw_DisponibilidadVuelo>();
+                ViewBag.Pasajeros = filtro.Pasajeros;
                 return View(new List<vw_VueloDetalle>());
             }
 
-            var vuelos = db.vw_VueloDetalle
-                .Where(v => v.EstadoVueloCodigo == "PROGRAMADO" || v.EstadoVueloCodigo == "CONFIRMADO")
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(origen))
-            {
-                var aeroOrigen = db.Aeropuertoes.FirstOrDefault(a => a.CodigoIATA == origen);
-                if (aeroOrigen != null)
-                {
-                    vuelos = vuelos.Where(v => v.AeropuertoOrigenId == aeroOrigen.AeropuertoId);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(destino))
-            {
-                var aeroDestino = db.Aeropuertoes.FirstOrDefault(a => a.CodigoIATA == destino);
-                if (aeroDestino != null)
-                {
-                    vuelos = vuelos.Where(v => v.AeropuertoDestinoId == aeroDestino.AeropuertoId);
-                }
-            }
-
-            if (fecha.HasValue)
-            {
-                DateTime fechaFiltro = fecha.Value.Date;
-                vuelos = vuelos.Where(v => DbFunctions.TruncateTime(v.FechaOperacion) == fechaFiltro);
-            }
-
-            var listaVuelos = vuelos
-                .OrderBy(v => v.FechaOperacion)
-                .ThenBy(v => v.HoraSalida)
-                .ToList();
-
-            // Diccionario de disponibilidad (libres y ocupados de los 7 asientos)
-            var dispDict = db.vw_DisponibilidadVuelo
-                .ToDictionary(d => d.VueloId, d => d);
-
-            // Filtramos para mostrar vuelos que tengan suficientes asientos disponibles
-            listaVuelos = listaVuelos
-                .Where(v => !dispDict.ContainsKey(v.VueloId) || (dispDict[v.VueloId].Disponibles ?? 7) >= numPasajeros)
-                .ToList();
-
-            ViewBag.DisponibilidadDict = dispDict;
-            ViewBag.Pasajeros = numPasajeros;
-
-            return View(listaVuelos);
+            Dictionary<int, vw_DisponibilidadVuelo> disponibilidad;
+            var vuelos = filtro.Buscar(db, out disponibilidad);
+            ViewBag.DisponibilidadDict = disponibilidad;
+            ViewBag.Pasajeros = filtro.Pasajeros;
+            return View(vuelos);
         }
 
         // ============================================================
@@ -101,8 +68,17 @@ namespace AerolineaVIP.Controllers
             }
 
             int vueloId = id.Value;
+            int numPasajeros = pasajeros ?? 1;
+            if (numPasajeros < 1 || numPasajeros > 7)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+            }
             var vuelo = db.vw_VueloDetalle.FirstOrDefault(v => v.VueloId == vueloId);
             if (vuelo == null)
+            {
+                return HttpNotFound();
+            }
+            if ((vuelo.EstadoVueloCodigo != "PROGRAMADO" && vuelo.EstadoVueloCodigo != "CONFIRMADO") || vuelo.FechaOperacion.Date < DateTime.Today)
             {
                 return HttpNotFound();
             }
@@ -116,7 +92,7 @@ namespace AerolineaVIP.Controllers
 
             ViewBag.Disponibilidad = disponibilidad;
             ViewBag.Asientos = asientos;
-            ViewBag.Pasajeros = pasajeros ?? 1;
+            ViewBag.Pasajeros = numPasajeros;
 
             return View(vuelo);
         }
@@ -134,8 +110,8 @@ namespace AerolineaVIP.Controllers
                 })
                 .ToList();
 
-            ViewBag.origen = new SelectList(aeropuertos, "Codigo", "Texto", origen);
-            ViewBag.destino = new SelectList(aeropuertos, "Codigo", "Texto", destino);
+            ViewBag.Origen = new SelectList(aeropuertos, "Codigo", "Texto", origen);
+            ViewBag.Destino = new SelectList(aeropuertos, "Codigo", "Texto", destino);
             ViewBag.fecha = fecha.HasValue ? fecha.Value.ToString("yyyy-MM-dd") : "";
             ViewBag.pasajeros = pasajeros ?? 1;
         }

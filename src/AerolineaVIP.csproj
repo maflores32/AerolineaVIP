@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
   <Import Project="packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
@@ -173,12 +173,16 @@
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AeronavesController.cs" />
+    <Compile Include="Controllers\AeropuertoController.cs" />
     <Compile Include="Controllers\CheckInController.cs" />
     <Compile Include="Controllers\ComprasController.cs" />
     <Compile Include="Controllers\ComprobantesController.cs" />
+    <Compile Include="Controllers\FrecuenciaController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\ReservasController.cs" />
+    <Compile Include="Controllers\RutaController.cs" />
+    <Compile Include="Controllers\VueloController.cs" />
     <Compile Include="Controllers\VuelosController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -202,6 +206,10 @@
     <Compile Include="Models\Aeronave.cs">
       <DependentUpon>AerolineaVIP_Model.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\EntityValidationMetadata.cs" />
+    <Compile Include="Models\CatalogDomainRules.cs" />
+    <Compile Include="Models\IdentityDocumentRules.cs" />
+    <Compile Include="Models\VueloSearchFilter.cs" />
     <Compile Include="Models\Aeropuerto.cs">
       <DependentUpon>AerolineaVIP_Model.tt</DependentUpon>
     </Compile>
@@ -367,6 +375,7 @@
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="Scripts\aerolinea-validation.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
@@ -424,6 +433,26 @@
     <Content Include="Views\Aeronaves\Edit.cshtml" />
     <Content Include="Views\Aeronaves\Details.cshtml" />
     <Content Include="Views\Aeronaves\Delete.cshtml" />
+    <Content Include="Views\Vuelo\Create.cshtml" />
+    <Content Include="Views\Vuelo\Delete.cshtml" />
+    <Content Include="Views\Vuelo\Details.cshtml" />
+    <Content Include="Views\Vuelo\Edit.cshtml" />
+    <Content Include="Views\Vuelo\Index.cshtml" />
+    <Content Include="Views\Aeropuerto\Index.cshtml" />
+    <Content Include="Views\Ruta\Index.cshtml" />
+    <Content Include="Views\Frecuencia\Index.cshtml" />
+    <Content Include="Views\Aeropuerto\Create.cshtml" />
+    <Content Include="Views\Aeropuerto\Edit.cshtml" />
+    <Content Include="Views\Ruta\Create.cshtml" />
+    <Content Include="Views\Ruta\Edit.cshtml" />
+    <Content Include="Views\Frecuencia\Create.cshtml" />
+    <Content Include="Views\Frecuencia\Edit.cshtml" />
+    <Content Include="Views\Aeropuerto\Details.cshtml" />
+    <Content Include="Views\Ruta\Details.cshtml" />
+    <Content Include="Views\Frecuencia\Details.cshtml" />
+    <Content Include="Views\Aeropuerto\Delete.cshtml" />
+    <Content Include="Views\Ruta\Delete.cshtml" />
+    <Content Include="Views\Frecuencia\Delete.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

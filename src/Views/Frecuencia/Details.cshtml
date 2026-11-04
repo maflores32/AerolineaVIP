@@ -1,0 +1,30 @@
+@model AerolineaVIP.Models.Frecuencia
+
+@{
+    ViewBag.Title = "Detalles de la frecuencia";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge bg-dark mb-1">CATÁLOGO DE OPERACIÓN</span>
+        <h2 class="mb-1">Detalles de la frecuencia</h2>
+        <p class="text-muted mb-0">Ruta, día y horario de operación recurrente.</p>
+    </div>
+    @Html.ActionLink("← Volver a frecuencias", "Index", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Ruta</dt><dd class="col-sm-9"><span class="badge bg-dark">@Model.Ruta.Aeropuerto.CodigoIATA</span> &rarr; <span class="badge bg-dark">@Model.Ruta.Aeropuerto1.CodigoIATA</span></dd>
+            <dt class="col-sm-3">Día de operación</dt><dd class="col-sm-9">@System.Globalization.CultureInfo.GetCultureInfo("es-ES").DateTimeFormat.GetDayName((DayOfWeek)(Model.DiaSemana % 7))</dd>
+            <dt class="col-sm-3">Hora de salida</dt><dd class="col-sm-9">@Model.HoraSalida.ToString(@"hh\:mm")</dd>
+            <dt class="col-sm-3">Hora de llegada</dt><dd class="col-sm-9">@Model.HoraLlegada.ToString(@"hh\:mm")</dd>
+            <dt class="col-sm-3">Estado</dt><dd class="col-sm-9"><span class="badge @(Model.Activa ? "bg-success" : "bg-secondary")">@(Model.Activa ? "Activa" : "Inactiva")</span></dd>
+        </dl>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        @Html.ActionLink("Editar", "Edit", new { id = Model.FrecuenciaId }, new { @class = "btn btn-vip" })
+        @Html.ActionLink("Volver al listado", "Index", null, new { @class = "btn btn-outline-secondary" })
+    </div>
+</div>

@@ -1,0 +1,34 @@
+@model AerolineaVIP.Models.Ruta
+
+@{
+    ViewBag.Title = "Eliminar ruta";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge bg-dark mb-1">CATÁLOGO DE OPERACIÓN</span>
+        <h2 class="mb-1">Eliminar ruta</h2>
+        <p class="text-muted mb-0">Revise la ruta antes de confirmar la eliminación.</p>
+    </div>
+    @Html.ActionLink("← Volver a rutas", "Index", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="alert alert-warning" role="alert">Una ruta con frecuencias asociadas no se puede borrar; puede desactivarla desde Editar.</div>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Origen</dt><dd class="col-sm-9">@Model.Aeropuerto.CodigoIATA - @Model.Aeropuerto.Localidad</dd>
+            <dt class="col-sm-3">Destino</dt><dd class="col-sm-9">@Model.Aeropuerto1.CodigoIATA - @Model.Aeropuerto1.Localidad</dd>
+            <dt class="col-sm-3">Tarifa referencial</dt><dd class="col-sm-9">@Model.TarifaReferencial.ToString("C2")</dd>
+            <dt class="col-sm-3">Estado</dt><dd class="col-sm-9">@(Model.Activa ? "Activa" : "Inactiva")</dd>
+        </dl>
+    </div>
+    <div class="card-footer bg-white">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">Eliminar ruta</button>
+            @Html.ActionLink("Cancelar", "Index", null, new { @class = "btn btn-outline-secondary ms-2" })
+        }
+    </div>
+</div>

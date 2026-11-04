@@ -1,0 +1,29 @@
+@model AerolineaVIP.Models.Aeropuerto
+
+@{
+    ViewBag.Title = "Detalles del aeropuerto";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge bg-dark mb-1">CATÁLOGO DE OPERACIÓN</span>
+        <h2 class="mb-1">Detalles del aeropuerto</h2>
+        <p class="text-muted mb-0">Información del aeropuerto seleccionado.</p>
+    </div>
+    @Html.ActionLink("← Volver a aeropuertos", "Index", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Código IATA</dt><dd class="col-sm-9"><span class="badge bg-dark">@Model.CodigoIATA</span></dd>
+            <dt class="col-sm-3">Nombre</dt><dd class="col-sm-9">@Model.Nombre</dd>
+            <dt class="col-sm-3">Localidad</dt><dd class="col-sm-9">@Model.Localidad</dd>
+            <dt class="col-sm-3">Estado</dt><dd class="col-sm-9"><span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">@(Model.Activo ? "Activo" : "Inactivo")</span></dd>
+        </dl>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        @Html.ActionLink("Editar", "Edit", new { id = Model.AeropuertoId }, new { @class = "btn btn-vip" })
+        @Html.ActionLink("Volver al listado", "Index", null, new { @class = "btn btn-outline-secondary" })
+    </div>
+</div>

@@ -17,6 +17,49 @@
     <div class="col-12 col-lg"><div class="card h-100 p-3"><span class="text-muted small">Ingresos del mes (USD)</span><strong class="fs-3">@Model.IngresosMes.ToString("C2")</strong></div></div>
 </div>
 
+<section class="card shadow-sm mb-4" aria-labelledby="mapa-operativo-titulo">
+    <div class="card-header bg-white">
+        <h3 id="mapa-operativo-titulo" class="h5 mb-0">Mapa de navegación operativa</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Configure los catálogos en orden y después genere los vuelos.</p>
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <span class="badge bg-dark mb-2">PASO 1</span>
+                    <h4 class="h6">Aeropuertos</h4>
+                    <p class="small text-muted">Cree los aeropuertos y sus códigos IATA.</p>
+                    @Html.ActionLink("Abrir aeropuertos", "Index", "Aeropuerto", null, new { @class = "btn btn-sm btn-outline-primary" })
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <span class="badge bg-dark mb-2">PASO 2</span>
+                    <h4 class="h6">Rutas</h4>
+                    <p class="small text-muted">Conecte aeropuertos activos y defina tarifas.</p>
+                    @Html.ActionLink("Abrir rutas", "Index", "Ruta", null, new { @class = "btn btn-sm btn-outline-primary" })
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <span class="badge bg-dark mb-2">PASO 3</span>
+                    <h4 class="h6">Frecuencias</h4>
+                    <p class="small text-muted">Defina días y horarios para las rutas.</p>
+                    @Html.ActionLink("Abrir frecuencias", "Index", "Frecuencia", null, new { @class = "btn btn-sm btn-outline-primary" })
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <span class="badge bg-dark mb-2">PASO 4</span>
+                    <h4 class="h6">Programación</h4>
+                    <p class="small text-muted">Genere las operaciones a partir de las frecuencias.</p>
+                    @Html.ActionLink("Abrir programación", "Programacion", "Vuelo", null, new { @class = "btn btn-sm btn-vip" })
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 @if (TempData["MensajeAdmin"] != null)
 {
     <div class="alert alert-success">@TempData["MensajeAdmin"]</div>
@@ -25,10 +68,10 @@
 <div class="row g-4">
     <div class="col-md-6 col-lg-3">
         <div class="card h-100 shadow-sm border-top border-4 border-primary p-3">
-            <h5 class="card-title text-primary">Programación de Vuelos</h5>
-            <p class="card-text text-muted small">Generación masiva con Store Procedure (usp_GenerarVuelos), confirmación y cancelación operativa.</p>
+            <h5 class="card-title text-primary">Programación de vuelos</h5>
+            <p class="card-text text-muted small">Módulo interno para generar vuelos y gestionar su operación. No es el buscador público.</p>
             <div class="mt-auto">
-                @Html.ActionLink("Gestionar Vuelos →", "Vuelos", "Admin", null, new { @class = "btn btn-outline-primary w-100" })
+                @Html.ActionLink("Abrir programación →", "Programacion", "Vuelo", null, new { @class = "btn btn-outline-primary w-100" })
             </div>
         </div>
     </div>
@@ -46,9 +89,21 @@
     <div class="col-md-6 col-lg-3">
         <div class="card h-100 shadow-sm border-top border-4 border-success p-3">
             <h5 class="card-title text-success">Usuarios, pasajeros y reservas</h5>
-            <p class="card-text text-muted small">Gestione pasajeros, reservas y configuración de rutas y frecuencias antes de generar vuelos.</p>
+            <p class="card-text text-muted small">Gestione usuarios, pasajeros y reservas. Los catálogos de aeropuerto, ruta y frecuencia tienen su propio módulo.</p>
             <div class="mt-auto">
-                @Html.ActionLink("Gestionar rutas y reservas →", "Gestion", "Admin", new { tab = "rutas" }, new { @class = "btn btn-outline-success w-100" })
+                @Html.ActionLink("Usuarios y reservas →", "Gestion", "Admin", new { tab = "usuarios" }, new { @class = "btn btn-outline-success w-100" })
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-top border-4 border-secondary p-3">
+            <h5 class="card-title">Catálogos de operación</h5>
+            <p class="card-text text-muted small">Configure aeropuertos, rutas y frecuencias antes de programar vuelos.</p>
+            <div class="mt-auto d-grid gap-2">
+                @Html.ActionLink("Aeropuertos", "Index", "Aeropuerto", null, new { @class = "btn btn-outline-secondary" })
+                @Html.ActionLink("Rutas", "Index", "Ruta", null, new { @class = "btn btn-outline-secondary" })
+                @Html.ActionLink("Frecuencias", "Index", "Frecuencia", null, new { @class = "btn btn-outline-secondary" })
             </div>
         </div>
     </div>
