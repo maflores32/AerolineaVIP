@@ -7,10 +7,14 @@ Mateo Alexander Flores Hidalgo · Rashell Estefany Pinos Cordero
 # Aerolínea VIP — Guía de uso
 
 Aplicación web académica de compra, reserva y administración de pasajes de una
-aerolínea VIP. Desarrollada con ASP.NET Framework 4.8.1, MVC 5, Razor, Bootstrap,
-jQuery, ASP.NET Identity 2.x, Entity Framework 6 (Database First) y SQL Server.
-Incluye las 21 pantallas del proyecto, mapa de asientos con estados de color,
+aerolínea VIP. El proyecto actualmente apunta a .NET Framework 4.8, MVC 5, Razor,
+Bootstrap, jQuery, ASP.NET Identity 2.x, Entity Framework 6 (Database First) y SQL Server.
+Incluye los wireframes de 21 pantallas, selección visual de asientos por vuelo,
 pago simulado con tarjeta, check-in y módulos administrativos con CRUD.
+
+> La rúbrica/guía previa menciona .NET Framework 4.8.1, mientras que
+> `src\AerolineaVIP.csproj` y `src\Web.config` están configurados para 4.8.
+> Confirmar con el docente si exige cambiar el target a 4.8.1 antes de modificarlo.
 
 > **Importante:** es una demostración. No procesa cobros reales, no uses tarjetas
 > ni datos personales reales. Las compras y los comprobantes generados por el flujo
@@ -22,14 +26,14 @@ pago simulado con tarjeta, check-in y módulos administrativos con CRUD.
 
 ### Requisitos previos
 
-- Visual Studio 2019 o 2022 con la carga de trabajo **"Desarrollo de ASP.NET y web"**.
-- **.NET Framework 4.8.1** (targeting pack instalado).
+- Visual Studio con la carga de trabajo **Desarrollo de ASP.NET y web** (verificado en Visual Studio Community 2026).
+- **.NET Framework 4.8** (targeting pack instalado; ver nota de versión anterior).
 - **SQL Server 2016 o superior** (Developer, Express o LocalDB) y **SQL Server Management Studio (SSMS)**.
 - **NuGet** para restaurar los paquetes del proyecto.
 
 ### Pasos para ejecutar localmente
 
-1. Abrir `src\AerolineaVIP.sln` en Visual Studio.
+1. Abrir `src\AerolineaVIP.slnx` en Visual Studio.
 2. En SSMS, abrir `database\Script_BD_AerolineaVIP.sql` y **ejecutarlo completo** (F5)
    contra una instancia local. El script crea dos bases independientes:
    - `AerolineaVIP` → dominio (vuelos, reservas, pagos simulados, comprobantes).
@@ -39,13 +43,14 @@ pago simulado con tarjeta, check-in y módulos administrativos con CRUD.
    objetos y datos. No lo vuelvas a ejecutar sobre una base con información que
    quieras conservar. La parte de Identity **conserva** las cuentas existentes.
 
-3. Revisar las cadenas `DefaultConnection` y `AerolineaVIPEntities` en
-   `src\AerolineaVIP\Web.config`. Deben apuntar a la instancia SQL local y a las
-   bases anteriores. Usar `Integrated Security=True` (autenticación de Windows) o
-   credenciales de ejemplo. **No subir contraseñas reales al repositorio.**
+3. Revisar las cadenas `DefaultConnection` y `AerolineaVIP_Entities` en
+   `src\Web.config`. Deben apuntar a la instancia SQL local y a las
+	  bases anteriores. Configurar credenciales locales seguras o `Integrated Security=True`
+   (autenticación de Windows), según la instancia. No reutilizar ni publicar contraseñas
+   del entorno de desarrollo.
 4. Restaurar los paquetes NuGet si Visual Studio lo solicita
    (clic derecho en la solución → **Restaurar paquetes NuGet**).
-5. Seleccionar el proyecto web `AerolineaVIP` como proyecto de inicio y ejecutar con
+5. Seleccionar `src\AerolineaVIP.csproj` como proyecto de inicio y ejecutar con
    IIS Express (`F5`). La URL inicial abre la página de inicio.
 
 Al arrancar, `Global.asax.cs` ejecuta el método `CrearRolesYUsuarios()`, que crea
@@ -133,6 +138,8 @@ tablas cuando la aplicación arranca.
   Quito–Galápagos con escala en Guayaquil.
 - **Vuelos de demostración:** dos semanas (12–18/10/2026 completados y
   02–08/11/2026 confirmados o programados).
+- **Moneda:** el esquema utiliza USD. Las tarifas del seed son valores de ejemplo y
+  no representan una política comercial aprobada (DP-04).
 - **24 pasajeros ficticios** con documentos y correos de ejemplo.
 - **12 reservas** (R01 a R12) con distintos estados: CONFIRMADA, PENDIENTE,
   CANCELADA, EXPIRADA.
@@ -220,6 +227,11 @@ flowchart TD
 
 ### Compra de un vuelo
 
+La búsqueda admite de 1 a 7 pasajeros, normaliza los códigos IATA y valida en el
+servidor que la fecha no sea pasada, que origen y destino sean distintos y que los
+aeropuertos estén activos. Los formularios también limitan la fecha desde el día
+actual.
+
 1. **Pantalla 5 — Buscar vuelos** (`/Vuelos/Buscar`): elige origen, destino, fecha y
    de 1 a 7 pasajeros; pulsa **Buscar**. Los destinos disponibles dependen de las
    rutas activas.
@@ -239,6 +251,9 @@ flowchart TD
    disponibilidad al confirmar la reserva.
 5. **Pantalla 9 — Datos de pasajeros** (`/Reservas/Pasajeros`): completa tipo y
    número de documento, nombres y apellidos de cada pasajero; continúa a la revisión.
+   El servidor valida campos, evita documentos repetidos en la misma reserva y, si el
+   tipo es `CEDULA`, verifica el formato y dígito de control de la cédula ecuatoriana.
+   También rechaza fechas de nacimiento futuras.
 6. **Pantalla 10 — Revisión y confirmación de reserva** (`/Reservas/Confirmar`):
    revisa vuelo, pasajeros, asientos, importe y condiciones. Acepta las condiciones y
    elige **Confirmar reserva** para guardar una reserva pendiente o
@@ -271,12 +286,15 @@ Los usuarios con rol `Administrador` o `SuperUsuario` acceden a **Administració
 desde la barra o `/Admin/Index`.
 
 - **Pantalla 17 — Panel administrativo** (`/Admin/Index`): página de accesos a los
-  módulos autorizados. **El dashboard de indicadores está excluido** de la primera
-  entrega.
+  módulos autorizados, con indicadores y mapa de navegación operativa de catálogos
+  (aeropuertos → rutas → frecuencias → programación).
 - **Pantalla 18 — Vuelos y rutas** (`/Admin/Vuelos`): administración de vuelos,
   frecuencias, rutas, itinerarios y aeropuertos.
-- **Pantalla 19 — Flota y asientos** (`/Admin/Aeronaves`): administración de
-  aeronaves, modelos y asientos.
+- **Pantalla 19 — Flota** (`/Admin/Aeronaves`): alta y administración de aeronaves
+  asociadas a un modelo. El mapa de asientos disponible durante la reserva representa
+  disponibilidad por vuelo; la vista previa de la distribución del modelo en el alta
+  de aeronaves aún está pendiente. La distribución es compartida por los aviones del
+  mismo modelo.
 - **Pantalla 20 — Gestión operativa** (`/Admin/Gestion`): pestañas de Usuarios,
   Pasajeros y Reservas, con CRUD autorizado según el rol.
 - **Pantalla 21 — Reportes** (`/Admin/Reportes`): consultas tabulares de ocupación,
@@ -348,4 +366,28 @@ botones y enlaces de la aplicación para mantener la reserva seleccionada.
 
 ## 7. Estado del proyecto
 
-- **Versión:** v1.0-primera-entrega
+- **Versión:** v1.0-primera-entrega.
+- **Codificación y cultura:** `src\Web.config` configura UTF-8 y la cultura `es-EC`.
+- **Generación de vuelos:** desde la programación se generan vuelos para un rango
+  usando frecuencias activas; la interfaz explica que el proceso evita duplicados.
+  Internamente se ejecuta `dbo.usp_GenerarVuelos`.
+- **Asientos por modelo:** el catálogo de asientos pertenece al modelo de aeronave,
+  por lo que su distribución se comparte entre aeronaves del mismo modelo. El mapa
+  visual en el alta de aeronaves todavía no está implementado.
+
+### Decisiones y datos pendientes de aprobación
+
+- **DP-04 — Tarifas:** el esquema utiliza USD, pero las tarifas cargadas por el script
+  son valores de ejemplo, no precios comerciales aprobados. La ruta de demostración
+  hacia Galápagos se opera por tramos UIO–GYE y GYE–GPS; los importes de cada tramo se
+  suman en la reserva. Confirmar la tarifa total deseada para el itinerario antes de
+  tratar estos valores como definitivos.
+- **DP-05 — Datos del emisor:** el script conserva valores pendientes/de ejemplo para
+  los datos fiscales del emisor. Los comprobantes son académicos y no tributarios.
+- **DP-07, DP-08 y DP-12:** siguen pendientes las políticas de expiración de reservas,
+  cambios/cancelaciones/reembolsos y condiciones del check-in, respectivamente.
+
+Las validaciones actuales incluyen fecha de búsqueda no pasada, entre 1 y 7 pasajeros,
+normalización de IATA, verificación de aeropuertos activos y validación de cédula
+ecuatoriana cuando el tipo de documento es `CEDULA`. La vista previa de asientos por
+modelo y la aprobación de políticas/tarifas no deben considerarse terminadas.
